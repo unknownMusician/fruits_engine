@@ -1,0 +1,30 @@
+#moments-container {
+    margin-top: 10px;
+    width: 100%;
+    height: 300px;
+    border: 1px solid black;
+    overflow: scroll;
+    position: relative;
+}
+
+.moment {
+    height: 20px;
+    background-color: red;
+    position: absolute;
+    border: 1px solid black;
+    overflow: hidden;
+}
+
+.moment:hover {
+    background-color: yellow;
+    border: 1px solid orange;
+}
+
+#moments-content {
+    position: absolute;
+}
+
+#selected-info {
+    padding: 10px;
+    border: 1px solid black;
+}
