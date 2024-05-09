@@ -18,16 +18,6 @@ impl<T: Number> Matrix3x3<T> {
     pub fn from_euler(euler: Vec3<f64>) -> Self {
         todo!()
     }
-    pub fn from_axis_angle(axis: Vec3<f64>, angle: f64) -> Self {
-        axis.normalize
-
-        Self::from_array([
-            [],
-            [],
-            []
-        ])
-        todo!()
-    }
 
     pub const fn from_array(data: [[T; 3]; 3]) -> Self {
         Self {
@@ -145,19 +135,19 @@ impl<T: Number> Mul for Matrix3x3<T> {
     fn mul(self, rhs: Matrix3x3<T>) -> Self::Output {
         Self::from_array([
             [
-                Vec3::from(self.row_0()).dot(Vec3::from(rhs.col_0())),
-                Vec3::from(self.row_0()).dot(Vec3::from(rhs.col_1())),
-                Vec3::from(self.row_0()).dot(Vec3::from(rhs.col_2())),
+                Vec3::from(self.row_0()).dot(&Vec3::from(rhs.col_0())),
+                Vec3::from(self.row_0()).dot(&Vec3::from(rhs.col_1())),
+                Vec3::from(self.row_0()).dot(&Vec3::from(rhs.col_2())),
             ],
             [
-                Vec3::from(self.row_1()).dot(Vec3::from(rhs.col_0())),
-                Vec3::from(self.row_1()).dot(Vec3::from(rhs.col_1())),
-                Vec3::from(self.row_1()).dot(Vec3::from(rhs.col_2())),
+                Vec3::from(self.row_1()).dot(&Vec3::from(rhs.col_0())),
+                Vec3::from(self.row_1()).dot(&Vec3::from(rhs.col_1())),
+                Vec3::from(self.row_1()).dot(&Vec3::from(rhs.col_2())),
             ],
             [
-                Vec3::from(self.row_2()).dot(Vec3::from(rhs.col_0())),
-                Vec3::from(self.row_2()).dot(Vec3::from(rhs.col_1())),
-                Vec3::from(self.row_2()).dot(Vec3::from(rhs.col_2())),
+                Vec3::from(self.row_2()).dot(&Vec3::from(rhs.col_0())),
+                Vec3::from(self.row_2()).dot(&Vec3::from(rhs.col_1())),
+                Vec3::from(self.row_2()).dot(&Vec3::from(rhs.col_2())),
             ],
         ])
     }
@@ -168,9 +158,9 @@ impl<T: Number> Mul<Vec3<T>> for Matrix3x3<T> {
 
     fn mul(self, rhs: Vec3<T>) -> Self::Output {
         Vec3::from_array([
-            Vec3::from(self.row_0()).dot(rhs),
-            Vec3::from(self.row_1()).dot(rhs),
-            Vec3::from(self.row_2()).dot(rhs),
+            Vec3::from(self.row_0()).dot(&rhs),
+            Vec3::from(self.row_1()).dot(&rhs),
+            Vec3::from(self.row_2()).dot(&rhs),
         ])
     }
 }

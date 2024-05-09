@@ -123,12 +123,12 @@ impl<T: Number> Mul for Matrix2x2<T> {
     fn mul(self, rhs: Matrix2x2<T>) -> Self::Output {
         Self::from_array([
             [
-                Vec2::from(self.row_0()).dot(Vec2::from(rhs.col_0())),
-                Vec2::from(self.row_0()).dot(Vec2::from(rhs.col_1())),
+                Vec2::from(self.row_0()).dot(&Vec2::from(rhs.col_0())),
+                Vec2::from(self.row_0()).dot(&Vec2::from(rhs.col_1())),
             ],
             [
-                Vec2::from(self.row_1()).dot(Vec2::from(rhs.col_0())),
-                Vec2::from(self.row_1()).dot(Vec2::from(rhs.col_1())),
+                Vec2::from(self.row_1()).dot(&Vec2::from(rhs.col_0())),
+                Vec2::from(self.row_1()).dot(&Vec2::from(rhs.col_1())),
             ],
         ])
     }
@@ -139,8 +139,8 @@ impl<T: Number> Mul<Vec2<T>> for Matrix2x2<T> {
 
     fn mul(self, rhs: Vec2<T>) -> Self::Output {
         Vec2::from_array([
-            Vec2::from(self.row_0()).dot(rhs),
-            Vec2::from(self.row_1()).dot(rhs),
+            Vec2::from(self.row_0()).dot(&rhs),
+            Vec2::from(self.row_1()).dot(&rhs),
         ])
     }
 }
