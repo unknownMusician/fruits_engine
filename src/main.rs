@@ -9,7 +9,7 @@ mod timer;
 mod app;
 mod ecs_modules;
 mod rendering;
-mod geometry;
+mod math;
 
 // use std::cell::RefCell;
 
