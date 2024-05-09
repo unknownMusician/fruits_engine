@@ -10,10 +10,11 @@ mod app;
 mod ecs_modules;
 mod rendering;
 mod math;
+mod alloc_monitor;
 
 // use std::cell::RefCell;
 
-use std::fs;
+use std::{fs, thread};
 
 use app::App;
 use ecs::{
@@ -59,6 +60,7 @@ fn run_ecs_behavior_integration_test() {
     //world.behavior_mut().get_mut(Schedule::Update).add_system(resource_system2);
     world.behavior_mut().get_mut(Schedule::Start).add_system(init_resources);
     world.behavior_mut().get_mut(Schedule::Start).add_system(init_mesh_material);
+    world.behavior_mut().get_mut(Schedule::Update).add_system(create_entity);
     world.behavior_mut().get_mut(Schedule::Start).order_systems(init_resources, init_mesh_material);
     //world.behavior_mut().get_mut(Schedule::Update).order_systems(sample_system2, sample_system1);
 
@@ -112,6 +114,15 @@ fn init_mesh_material(mut world: ExclusiveWorldAccess) {
     let entity = world.entities_components_mut().create_entity();
     world.entities_components_mut().add_component(entity, RenderMeshComponent { mesh });
     world.entities_components_mut().add_component(entity, RenderMaterialComponent { material });
+}
+
+fn create_entity(mut world: ExclusiveWorldAccess) {
+    for _ in 0..10_000 {
+        world.entities_components_mut().create_entity();
+    }
+    let count = world.entities_components_mut().entities_count();
+
+    println!("Entities count: {}; Bytes allocated: {}", count, alloc_monitor::allocated());
 }
 
 fn main() {
