@@ -2,20 +2,14 @@ use std::ops::{Index, IndexMut, Mul};
 
 use super::{num::Number, Vec2};
 
+#[derive(Copy, Clone)]
 pub struct Matrix2x2<T: Number> {
     data: [[T; 2]; 2],
 }
 
 /// Column-major
 impl<T: Number> Matrix2x2<T> {
-    pub fn from_scale(pos: Vec2<T>) -> Self {
-        Self::from_array([
-            [pos.x, T::ZERO],
-            [T::ZERO, pos.y],
-        ])
-    }
-
-    pub fn from_rotation(rad: f64) -> Self {
+    pub const fn from_rotation(rad: f64) -> Self {
         let sin = rad.sin();
         let cos = rad.cos();
 
@@ -33,23 +27,23 @@ impl<T: Number> Matrix2x2<T> {
 
     pub const fn into_array(self) -> [[T; 2]; 2] { self.data }
 
-    pub fn col_0(&self) -> [T; 2] { self.data[0] }
-    pub fn col_1(&self) -> [T; 2] { self.data[1] }
+    pub const fn col_0(&self) -> [T; 2] { self.data[0] }
+    pub const fn col_1(&self) -> [T; 2] { self.data[1] }
 
-    pub fn row_0(&self) -> [T; 2] { [self.data[0][0], self.data[1][0]] }
-    pub fn row_1(&self) -> [T; 2] { [self.data[0][1], self.data[1][1]] }
+    pub const fn row_0(&self) -> [T; 2] { [self.data[0][0], self.data[1][0]] }
+    pub const fn row_1(&self) -> [T; 2] { [self.data[0][1], self.data[1][1]] }
 
-    pub fn get_0_0(&self) -> &T { &self.data[0][0] }
-    pub fn get_0_1(&self) -> &T { &self.data[0][1] }
-    pub fn get_1_0(&self) -> &T { &self.data[1][0] }
-    pub fn get_1_1(&self) -> &T { &self.data[1][1] }
+    pub const fn get_0_0(&self) -> &T { &self.data[0][0] }
+    pub const fn get_0_1(&self) -> &T { &self.data[0][1] }
+    pub const fn get_1_0(&self) -> &T { &self.data[1][0] }
+    pub const fn get_1_1(&self) -> &T { &self.data[1][1] }
 
-    pub fn get_0_0_mut(&mut self) -> &T { &mut self.data[0][0] }
-    pub fn get_0_1_mut(&mut self) -> &T { &mut self.data[0][1] }
-    pub fn get_1_0_mut(&mut self) -> &T { &mut self.data[1][0] }
-    pub fn get_1_1_mut(&mut self) -> &T { &mut self.data[1][1] }
+    pub const fn get_0_0_mut(&mut self) -> &T { &mut self.data[0][0] }
+    pub const fn get_0_1_mut(&mut self) -> &T { &mut self.data[0][1] }
+    pub const fn get_1_0_mut(&mut self) -> &T { &mut self.data[1][0] }
+    pub const fn get_1_1_mut(&mut self) -> &T { &mut self.data[1][1] }
 
-    pub fn col(&self, x: u8) -> Option<[T; 2]> {
+    pub const fn col(&self, x: u8) -> Option<[T; 2]> {
         if x > 1 {
             return None;
         }
@@ -57,7 +51,7 @@ impl<T: Number> Matrix2x2<T> {
         Some(self.data[x as usize])
     }
 
-    pub fn row(&self, y: u8) -> Option<[T; 2]> {
+    pub const fn row(&self, y: u8) -> Option<[T; 2]> {
         if y > 1 {
             return None;
         }
@@ -65,7 +59,7 @@ impl<T: Number> Matrix2x2<T> {
         Some([self.data[0][y as usize], self.data[1][y as usize]])
     }
 
-    pub fn get(&self, x: u8, y: u8) -> Option<&T> {
+    pub const fn get(&self, x: u8, y: u8) -> Option<&T> {
         if x > 1 || y > 1 {
             return None;
         }
@@ -73,7 +67,7 @@ impl<T: Number> Matrix2x2<T> {
         Some(&self.data[x as usize][y as usize])
     }
 
-    pub fn get_mut(&mut self, x: u8, y: u8) -> Option<&mut T> {
+    pub const fn get_mut(&mut self, x: u8, y: u8) -> Option<&mut T> {
         if x > 1 || y > 1 {
             return None;
         }
@@ -81,8 +75,11 @@ impl<T: Number> Matrix2x2<T> {
         Some(&mut self.data[x as usize][y as usize])
     }
 
-    pub fn transpose(&mut self) {
-        (self.data[0][1], self.data[1][0]) = (self.data[1][0], self.data[0][1]);
+    pub const fn transpose(&mut self) {
+        *self = Self::from_array([
+            self.row_0(),
+            self.row_1(),
+        ]);
     }
 }
 
@@ -112,11 +109,6 @@ impl<T: Number> IndexMut<(usize, usize)> for Matrix2x2<T> {
     }
 }
 
-impl<T: Number> Clone for Matrix2x2<T> {
-    fn clone(&self) -> Self { Self { data: self.data.clone() } }
-}
-impl<T: Number> Copy for Matrix2x2<T> { }
-
 impl<T: Number> Mul for Matrix2x2<T> {
     type Output = Self;
 
@@ -142,6 +134,15 @@ impl<T: Number> Mul<Vec2<T>> for Matrix2x2<T> {
             Vec2::from(self.row_0()).dot(&rhs),
             Vec2::from(self.row_1()).dot(&rhs),
         ])
+    }
+}
+
+impl<T: Number> Mul<T> for Matrix2x2<T> {
+    type Output = T;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        let Vec2 { x, y, } = self.mul(Vec2::new(rhs, T::ONE));
+        x / y
     }
 }
 

@@ -1,8 +1,6 @@
 pub mod shader;
 
-use std::ops::{Index, IndexMut};
-
-use wgpu::{util::DeviceExt, Buffer, Device, RenderPipeline, SurfaceConfiguration};
+use wgpu::{util::DeviceExt, BindGroupLayout, Buffer, Device, RenderPipeline, SurfaceConfiguration};
 
 use self::shader::Shader;
 
@@ -11,12 +9,12 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn new(device: &Device, surface_config: &SurfaceConfiguration, shader: &Shader) -> Self {
+    pub fn new(device: &Device, surface_config: &SurfaceConfiguration, shader: &Shader, bind_group_layouts: &[&BindGroupLayout]) -> Self {
         let shader = shader.shader_module();
 
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[],
+            bind_group_layouts,
             push_constant_ranges: &[],
         });
 

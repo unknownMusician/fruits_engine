@@ -15,24 +15,8 @@ pub trait Resource: 'static + Send + Sync {
 
 }
 
-trait StoredResource: Any + Send + Sync {
-    fn as_any(&self) -> &dyn Any;
-}
-
-impl dyn StoredResource {
-    fn downcast<R: Resource>(&self) -> Option<&RwLock<R>> {
-        self.as_any().downcast_ref::<RwLock<R>>()
-    }
-}
-
-impl<R: Resource + 'static> StoredResource for RwLock<R> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
 pub struct WorldResources {
-    resources: HashMap<TypeId, Box<dyn StoredResource>>,
+    resources: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
 }
 
 impl WorldResources {
@@ -47,10 +31,10 @@ impl WorldResources {
     }
 
     pub fn get<R: Resource>(&self) -> Option<RwLockReadGuard<'_, R>> {
-        self.resources.get(&TypeId::of::<R>())?.downcast::<R>()?.try_read().ok()
+        self.resources.get(&TypeId::of::<R>())?.downcast_ref::<RwLock<R>>()?.try_read().ok()
     }
 
     pub fn get_mut<R: Resource>(&self) -> Option<RwLockWriteGuard<'_, R>> {
-        self.resources.get(&TypeId::of::<R>())?.downcast::<R>()?.try_write().ok()
+        self.resources.get(&TypeId::of::<R>())?.downcast_ref::<RwLock<R>>()?.try_write().ok()
     }
 }

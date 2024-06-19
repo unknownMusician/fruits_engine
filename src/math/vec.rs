@@ -23,14 +23,19 @@ macro_rules! add_all {
 }
 
 macro_rules! vec_impl {
-    ($T: ident, $($I: ident),+) => {
-        pub struct $T<T: Number> {
+    ($V: ident, $($I: ident),+) => {
+        #[derive(Copy, Clone)]
+        pub struct $V<T: Number> {
             $(pub $I: T),+
         }
 
-        impl<T: Number> $T<T> {
+        impl<T: Number> $V<T> {
             pub const fn new($($I: T),+) -> Self {
                 Self { $($I),+ }
+            }
+
+            pub const fn with_all(v: T) -> Self {
+                Self { $($I: v),+ }
             }
 
             pub const fn into_array(self) -> [T; members_count!($($I),+)] {
@@ -59,19 +64,19 @@ macro_rules! vec_impl {
             }
         }
 
-        impl<T: Number> Into<[T; members_count!($($I),+)]> for $T<T> {
+        impl<T: Number> Into<[T; members_count!($($I),+)]> for $V<T> {
             fn into(self) -> [T; members_count!($($I),+)] {
                 self.into_array()
             }
         }
 
-        impl<T: Number> From<[T; members_count!($($I),+)]> for $T<T> {
+        impl<T: Number> From<[T; members_count!($($I),+)]> for $V<T> {
             fn from(a: [T; members_count!($($I),+)]) -> Self {
                 Self::from_array(a)
             }
         }
 
-        impl<T: Number> Add for $T<T> {
+        impl<T: Number> Add for $V<T> {
             type Output = Self;
         
             fn add(self, rhs: Self) -> Self::Output {
@@ -81,13 +86,13 @@ macro_rules! vec_impl {
             }
         }
         
-        impl<T: Number> AddAssign for $T<T> {
+        impl<T: Number> AddAssign for $V<T> {
             fn add_assign(&mut self, rhs: Self) {
                 $(self.$I += rhs.$I);+
             }
         }
         
-        impl<T: Number> Sub for $T<T> {
+        impl<T: Number> Sub for $V<T> {
             type Output = Self;
         
             fn sub(self, rhs: Self) -> Self::Output {
@@ -97,13 +102,13 @@ macro_rules! vec_impl {
             }
         }
         
-        impl<T: Number> SubAssign for $T<T> {
+        impl<T: Number> SubAssign for $V<T> {
             fn sub_assign(&mut self, rhs: Self) {
                 $(self.$I -= rhs.$I);+
             }
         }
 
-        impl<T: Number> Mul for $T<T> {
+        impl<T: Number> Mul for $V<T> {
             type Output = Self;
         
             fn mul(self, rhs: Self) -> Self::Output {
@@ -112,14 +117,30 @@ macro_rules! vec_impl {
                 }
             }
         }
+
+        impl<T: Number> Mul<T> for $V<T> {
+            type Output = Self;
         
-        impl<T: Number> MulAssign for $T<T> {
+            fn mul(self, rhs: T) -> Self::Output {
+                Self::Output {
+                    $($I: self.$I * rhs),+
+                }
+            }
+        }
+        
+        impl<T: Number> MulAssign for $V<T> {
             fn mul_assign(&mut self, rhs: Self) {
                 $(self.$I *= rhs.$I);+
             }
         }
         
-        impl<T: Number> Div for $T<T> {
+        impl<T: Number> MulAssign<T> for $V<T> {
+            fn mul_assign(&mut self, rhs: T) {
+                $(self.$I *= rhs);+
+            }
+        }
+        
+        impl<T: Number> Div for $V<T> {
             type Output = Self;
         
             fn div(self, rhs: Self) -> Self::Output {
@@ -129,18 +150,25 @@ macro_rules! vec_impl {
             }
         }
         
-        impl<T: Number> DivAssign for $T<T> {
+        impl<T: Number> Div<T> for $V<T> {
+            type Output = Self;
+        
+            fn div(self, rhs: T) -> Self::Output {
+                Self::Output {
+                    $($I: self.$I / rhs),+
+                }
+            }
+        }
+        
+        impl<T: Number> DivAssign for $V<T> {
             fn div_assign(&mut self, rhs: Self) {
                 $(self.$I /= rhs.$I);+
             }
         }
-
-        impl<T: Number> Copy for $T<T> { }
-        impl<T: Number> Clone for $T<T> {
-            fn clone(&self) -> Self {
-                Self {
-                    $($I: self.$I.clone()),+
-                }
+        
+        impl<T: Number> DivAssign<T> for $V<T> {
+            fn div_assign(&mut self, rhs: T) {
+                $(self.$I /= rhs);+
             }
         }
     };
@@ -171,3 +199,5 @@ impl<T: Number> CrossProduct for Vec3<T>
 
 // todo: swizzling
 // todo: maybe unconstraint from Number trait
+// todo: VertexIndex for optimized consecutive lookup.
+// todo: const fn and inline where possible/needed.

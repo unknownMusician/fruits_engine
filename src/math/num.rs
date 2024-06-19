@@ -49,9 +49,11 @@ impl_number_trait!(i16, 0_i16, 1_i16);
 impl_number_trait!(i32, 0_i32, 1_i32);
 impl_number_trait!(i64, 0_i64, 1_i64);
 impl_number_trait!(i128, 0_i128, 1_i128);
+impl_number_trait!(isize, 0_isize, 1_isize);
 
 impl_number_trait!(u8, 0_u8, 1_u8);
 impl_number_trait!(u16, 0_u16, 1_u16);
 impl_number_trait!(u32, 0_u32, 1_u32);
 impl_number_trait!(u64, 0_u64, 1_u64);
 impl_number_trait!(u128, 0_u128, 1_u128);
+impl_number_trait!(usize, 0_usize, 1_usize);

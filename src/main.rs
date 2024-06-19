@@ -14,8 +14,6 @@ mod alloc_monitor;
 
 // use std::cell::RefCell;
 
-use std::{fs, thread};
-
 use app::App;
 use ecs::{
     behavior::system::params::*,
@@ -24,8 +22,10 @@ use ecs::{
         resources::Resource,
     },
 };
+use ecs_modules::transforms_module::GlobalTransform;
+use math::{Matrix3x3, Vec3};
 
-use crate::{app::RenderStateResource, ecs::behavior::Schedule, ecs_modules::render_module::{self, AssetStorageResource, RenderMaterialComponent, RenderMeshComponent}, models::{Material, Mesh}};
+use crate::{app::RenderStateResource, ecs::behavior::Schedule, ecs_modules::render_module::{self, AssetStorageResource, CameraComponent, RenderMaterialComponent, RenderMeshComponent}, models::{Material, Mesh}};
 
 // fn run_ecs_data_integration_test() {
 //     let mut world = ecs::World::new();
@@ -56,15 +56,15 @@ fn run_ecs_behavior_integration_test() {
 
     render_module::add_module_to(world);
 
-    //world.behavior_mut().get_mut(Schedule::Update).add_system(resource_system1);
-    //world.behavior_mut().get_mut(Schedule::Update).add_system(resource_system2);
     world.behavior_mut().get_mut(Schedule::Start).add_system(init_resources);
     world.behavior_mut().get_mut(Schedule::Start).add_system(init_mesh_material);
-    world.behavior_mut().get_mut(Schedule::Update).add_system(create_entity);
-    world.behavior_mut().get_mut(Schedule::Start).order_systems(init_resources, init_mesh_material);
-    //world.behavior_mut().get_mut(Schedule::Update).order_systems(sample_system2, sample_system1);
 
-    world.data_mut().entities_components_mut().create_entity();
+    world.behavior_mut().get_mut(Schedule::Start).order_systems(init_resources, init_mesh_material);
+
+    let entity = world.data_mut().entities_components_mut().create_entity();
+
+    world.data_mut().entities_components_mut().add_component(entity, GlobalTransform { scale_rotation: Matrix3x3::identity(), position: Vec3::with_all(0.0_f32) });
+    world.data_mut().entities_components_mut().add_component(entity, CameraComponent);
 
     println!("start");
     app.run(|| {
@@ -114,15 +114,6 @@ fn init_mesh_material(mut world: ExclusiveWorldAccess) {
     let entity = world.entities_components_mut().create_entity();
     world.entities_components_mut().add_component(entity, RenderMeshComponent { mesh });
     world.entities_components_mut().add_component(entity, RenderMaterialComponent { material });
-}
-
-fn create_entity(mut world: ExclusiveWorldAccess) {
-    for _ in 0..10_000 {
-        world.entities_components_mut().create_entity();
-    }
-    let count = world.entities_components_mut().entities_count();
-
-    println!("Entities count: {}; Bytes allocated: {}", count, alloc_monitor::allocated());
 }
 
 fn main() {

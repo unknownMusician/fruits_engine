@@ -3,7 +3,7 @@ use std::{error::Error, sync::{Arc, Mutex}};
 use wgpu::{
     Backends, Color, CommandEncoderDescriptor, Device, DeviceDescriptor, Features, IndexFormat, Instance, InstanceDescriptor, Limits, LoadOp, Operations, PowerPreference, Queue, RenderPassColorAttachment, RenderPassDescriptor, RequestAdapterOptions, StoreOp, Surface, SurfaceConfiguration, TextureUsages, TextureViewDescriptor
 };
-use winit::{dpi::PhysicalSize, event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent}, event_loop::{self, ControlFlow, EventLoop}, window::{Window, WindowBuilder}};
+use winit::{dpi::PhysicalSize, event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::{Window, WindowBuilder}};
 
 use crate::models::{shader::Shader, Material, Mesh};
 
