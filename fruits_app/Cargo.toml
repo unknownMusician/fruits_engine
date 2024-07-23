@@ -1,0 +1,13 @@
+[package]
+name = "fruits_app"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+fruits_ecs = { path = "../fruits_ecs" }
+fruits_window = { path = "../fruits_window" }

@@ -27,29 +27,6 @@ use math::{Matrix3x3, Vec3};
 
 use crate::{app::RenderStateResource, ecs::behavior::Schedule, ecs_modules::render_module::{self, AssetStorageResource, CameraComponent, RenderMaterialComponent, RenderMeshComponent}, models::{Material, Mesh}};
 
-// fn run_ecs_data_integration_test() {
-//     let mut world = ecs::World::new();
-
-//     let entity = world.data_mut().create_entity();
-//     println!("[info] created entity {}.", entity.index);
-
-//     let add_component_result = world.data_mut().add_component(entity, 5_i32);
-//     println!("[info] created entity {}: {}", entity.index, add_component_result.is_none());
-
-//     println!("[check] is entity {} contains component i32: {}", entity.index, world.data_mut().get_component_ref::<i32>(entity).is_some());
-//     println!("[check] does entity {} exist: {}", entity.index, world.data_mut().entity_exists(entity));
-
-//     world.data_mut().destroy_entity(entity);
-//     println!("[info] deleted entity {}.", entity.index);
-
-//     println!("[check] does entity {} exist: {}", entity.index, world.data_mut().entity_exists(entity));
-
-//     let entity = world.data_mut().create_entity();
-//     println!("[info] created entity {}.", entity.index);
-
-//     println!("[check] does entity {} exist: {}", entity.index, world.data_mut().entity_exists(entity));
-// }
-
 fn run_ecs_behavior_integration_test() {
     let mut app = App::new();
     let world = app.ecs_world_mut();

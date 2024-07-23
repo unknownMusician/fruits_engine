@@ -27,7 +27,7 @@ impl Timer {
     }
 
     pub fn new_heavy_only(name: impl Into<String>, min_duration_to_log: Duration) -> Self {
-        _ = INIT_INSTANT.set(Instant::now());
+        _ = INIT_INSTANT.get_or_init(|| Instant::now());
 
         Self {
             name: Some(name.into()),

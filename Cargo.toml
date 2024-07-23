@@ -1,3 +1,4 @@
+workspace = { members = [ "fruits_alloc_monitor", "fruits_app","fruits_ecs", "fruits_example", "fruits_math", "fruits_modules", "fruits_utils", "fruits_window", "hlib_test"] }
 [package]
 name = "fruits_engine"
 version = "0.1.0"
