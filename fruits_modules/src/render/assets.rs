@@ -1,7 +1,9 @@
-mod mesh;
+mod instance;
 mod material;
+mod mesh;
 mod shader;
 
-pub use mesh::*;
+pub use instance::*;
 pub use material::*;
+pub use mesh::*;
 pub use shader::*;

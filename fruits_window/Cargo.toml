@@ -10,5 +10,5 @@ crate-type = ["lib"]
 
 [dependencies]
 pollster = "0.3"
-winit = "0.28"
-wgpu = "0.18"
+winit = "0.30.4"
+wgpu = "22.0.0"

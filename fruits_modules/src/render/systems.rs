@@ -5,7 +5,7 @@ use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroupDescriptor, BindGro
 
 use crate::{asset::AssetStorageResource, transform::GlobalTransform};
 
-use super::{assets::{Material, Mesh}, components::{CameraComponent, RenderMaterialComponent, RenderMeshComponent}, resources::{CameraUniformBufferGroupLayoutResource, CameraUniformBufferResource, SurfaceTextureResource}};
+use super::{assets::{Material, Mesh}, components::{CameraComponent, RenderMaterialComponent, RenderMeshComponent}, resources::{CameraUniformBufferGroupLayoutResource, CameraUniformBufferResource, InstanceBufferResource, SurfaceTextureResource}};
 
 pub fn create_camera_uniform_bind_group_layout(
     mut world: ExclusiveWorldAccess,
@@ -14,7 +14,7 @@ pub fn create_camera_uniform_bind_group_layout(
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
         let render_state = render_state.get().lock().unwrap();
 
-        let layout = render_state.device().create_bind_group_layout(&BindGroupLayoutDescriptor {
+        render_state.device().create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("Camera bind group layout"),
             entries: &[
                 BindGroupLayoutEntry {
@@ -28,8 +28,7 @@ pub fn create_camera_uniform_bind_group_layout(
                     count: None,
                 }
             ]
-        });
-        layout
+        })
     };
 
     world.resources_mut().insert(CameraUniformBufferGroupLayoutResource::new(layout));
@@ -70,6 +69,27 @@ pub fn create_camera_uniform_buffer(
     });
 }
 
+pub fn create_instance_buffer(
+    mut world: ExclusiveWorldAccess,
+) {
+    let buffer = {
+        let render_state = world.resources().get::<RenderStateResource>().unwrap();
+        let render_state = render_state.get().lock().unwrap();
+
+        let buffer = render_state.device().create_buffer_init(&BufferInitDescriptor {
+            label: Some("Instance Buffer"),
+            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+            contents: unsafe { (&Matrix4x4::<f32>::IDENTITY.into_array()).align_to::<u8>().1 },
+        });
+
+        buffer
+    };
+
+    world.resources_mut().insert(InstanceBufferResource {
+        buffer,
+    });
+}
+
 pub fn update_camera_uniform_buffer(
     render_state: Res<RenderStateResource>,
     buffer: ResMut<CameraUniformBufferResource>,
@@ -85,12 +105,7 @@ pub fn update_camera_uniform_buffer(
 
     let transform_matrix = fruits_math::into_matrix4x4_with_pos(transform.scale_rotation, transform.position).inverse().unwrap();
 
-    let mut matrix = projection_matrix * transform_matrix;
-    //matrix.transpose();
-
-    println!("projec: {:?}", projection_matrix.into_array());
-    println!("transf: {:?}", transform_matrix.into_array());
-    println!("matrix: {:?}", matrix.into_array());
+    let matrix = projection_matrix * transform_matrix;
 
     let matrix = matrix.into_array();
     let matrix = unsafe { matrix.align_to::<u8>().1 };
@@ -114,14 +129,15 @@ pub fn present_surface(mut surface_texture: ResMut<SurfaceTextureResource>) {
 }
 
 pub fn render_meshes_and_materials(
-    q: WorldQuery<(&RenderMeshComponent, &RenderMaterialComponent)>,
+    query: WorldQuery<(&GlobalTransform, &RenderMeshComponent, &RenderMaterialComponent)>,
     render_state: Res<RenderStateResource>,
     camera_buffer: Res<CameraUniformBufferResource>,
+    instance_buffer: Res<InstanceBufferResource>,
     surface_texture: ResMut<SurfaceTextureResource>,
     meshes: Res<AssetStorageResource<Mesh>>,
     materials: Res<AssetStorageResource<Material>>,
 ) {
-    if q.len() == 0 {
+    if query.len() == 0 {
         return;
     }
 
@@ -131,14 +147,29 @@ pub fn render_meshes_and_materials(
 
     let render_state = render_state.get().lock().unwrap();
 
-    for (render_mesh, render_material) in q.iter() {
+    for (transform, render_mesh, render_material) in query.iter() {
         let Some(mesh) = meshes.get(&render_mesh.mesh) else { continue; };
         let Some(material) = materials.get(&render_material.material) else { continue; };
+
+        let transform_matrix = fruits_math::into_matrix4x4_with_pos(transform.scale_rotation, transform.position);
+        let transform_matrix = transform_matrix.into_array();
+        let transform_matrix = unsafe { transform_matrix.align_to::<u8>().1 };
+
+        // instance_buffer.buffer.slice(..).map_async(wgpu::MapMode::Write, |result| {
+        //     result.unwrap();
+        // });
+        
+        // render_state.device().poll(wgpu::Maintain::Wait);
+
+        // instance_buffer.buffer.slice(..).get_mapped_range_mut().copy_from_slice(transform_matrix);
+
+        render_state.queue().write_buffer(&instance_buffer.buffer, 0, transform_matrix);
+        render_state.queue().submit([]);
 
         let mut encoder = render_state.device().create_command_encoder(&CommandEncoderDescriptor {
             label: Some("Render Encoder"),
         });
-        
+
         {
             let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -146,12 +177,13 @@ pub fn render_meshes_and_materials(
                     view: &view,
                     resolve_target: None,
                     ops: Operations {
-                        load: LoadOp::Clear(Color {
-                            r: 1.0,
-                            g: 1.0,
-                            b: 0.5,
-                            a: 1.0,
-                        }),
+                        load: LoadOp::Load,
+                        // load: LoadOp::Clear(Color {
+                        //     r: 1.0,
+                        //     g: 1.0,
+                        //     b: 0.5,
+                        //     a: 1.0,
+                        // }),
                         store: StoreOp::Store,
                     },
                 })],
@@ -162,6 +194,7 @@ pub fn render_meshes_and_materials(
             render_pass.set_pipeline(material.render_pipeline());
             render_pass.set_bind_group(0, &camera_buffer.group, &[]);
             render_pass.set_vertex_buffer(0, mesh.vertex_buffer().slice(..));
+            render_pass.set_vertex_buffer(1, instance_buffer.buffer.slice(..));
             render_pass.set_index_buffer(mesh.index_buffer().slice(..), IndexFormat::Uint16);
             render_pass.draw_indexed(0..(mesh.indices_count() as u32), 0, 0..1);
         }

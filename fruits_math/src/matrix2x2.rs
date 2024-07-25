@@ -11,13 +11,13 @@ pub struct Matrix2x2<T: Number> {
 
 /// Column-major
 impl<T: Number> Matrix2x2<T> {
-    pub fn from_rotation(rad: f64) -> Self {
-        let sin = rad.sin();
-        let cos = rad.cos();
+    pub fn from_rotation(angle: T) -> Self {
+        let sin = angle.into_f64().sin();
+        let cos = angle.into_f64().cos();
 
         Self::from_array([
-            [Number::from_f64(cos), Number::from_f64(sin)],
-            [Number::from_f64(-sin), Number::from_f64(cos)],
+            [Number::from_f64(cos), Number::from_f64(-sin)],
+            [Number::from_f64(sin), Number::from_f64(cos)],
         ])
     }
 

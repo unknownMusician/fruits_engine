@@ -3,6 +3,7 @@ use std::any::TypeId;
 #[derive(Clone, Copy)]
 pub struct TypeInfo {
     id: TypeId,
+    name: &'static str,
     size: usize,
     dropper: unsafe fn(*mut())
 }
@@ -11,6 +12,7 @@ impl TypeInfo {
     pub fn new<T: 'static>() -> Self {
         Self {
             id: TypeId::of::<T>(),
+            name: std::any::type_name::<T>(),
             size: std::mem::size_of::<T>(),
             dropper: Self::drop_any::<T>,
         }

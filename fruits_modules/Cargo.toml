@@ -13,4 +13,4 @@ fruits_app = { path = "../fruits_app" }
 fruits_ecs = { path = "../fruits_ecs" }
 fruits_math = { path = "../fruits_math" }
 fruits_utils = { path = "../fruits_utils" }
-wgpu = "0.18"
+wgpu = "22.0.0"

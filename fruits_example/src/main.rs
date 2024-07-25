@@ -1,8 +1,8 @@
 use std::time::Instant;
 
 use fruits_app::{App, RenderStateResource};
-use fruits_ecs::{data::{archetypes::component::Component, resource::Resource}, system_params::{ExclusiveWorldAccess, Res, ResMut, WorldQuery}, world_behavior::Schedule};
-use fruits_math::{Matrix, Vec3};
+use fruits_ecs::{data::{archetypes::{component::Component, entity::Entity}, resource::Resource}, system_params::{ExclusiveWorldAccess, Res, ResMut, WorldQuery}, world_behavior::Schedule};
+use fruits_math::{Matrix, Matrix3x3, Vec3};
 use fruits_modules::{asset::AssetStorageResource, render::{self as render_module, assets::*, components::*, resources::*, systems::create_camera_uniform_bind_group_layout}, transform::GlobalTransform};
 
 fn main() {
@@ -19,7 +19,10 @@ fn run_ecs_behavior_integration_test() {
     world.behavior_mut().get_mut(Schedule::Start).add_system(init_mesh_material);
     world.behavior_mut().get_mut(Schedule::Update).add_system(update_time);
     world.behavior_mut().get_mut(Schedule::Update).add_system(move_camera);
+    world.behavior_mut().get_mut(Schedule::Update).add_system(move_cube);
+    world.behavior_mut().get_mut(Schedule::Update).add_system(log_fps);
 
+    world.behavior_mut().get_mut(Schedule::Update).order_systems(move_cube, move_camera);
     world.behavior_mut().get_mut(Schedule::Start).order_systems(init_resources, init_mesh_material);
     world.behavior_mut().get_mut(Schedule::Start).order_systems(create_camera_uniform_bind_group_layout, init_mesh_material);
 
@@ -27,7 +30,7 @@ fn run_ecs_behavior_integration_test() {
 
     world.data_mut().entities_components_mut().add_component(entity, GlobalTransform {
         scale_rotation: Matrix::IDENTITY,
-        position: Vec3::new(0.0_f32, 0.0_f32, -3.0f32),
+        position: Vec3::new(0.0_f32, 0.0_f32, -1.0f32),
     });
     world.data_mut().entities_components_mut().add_component(entity, CameraComponent {
         near: 0.1_f32,
@@ -44,8 +47,8 @@ fn run_ecs_behavior_integration_test() {
 struct SampleResource {}
 impl Resource for SampleResource {}
 
-struct SampleComponent {}
-impl Component for SampleComponent {}
+struct MovingCubeComponent;
+impl Component for MovingCubeComponent {}
 
 struct TimeResource {
     pub time: f32,
@@ -53,8 +56,15 @@ struct TimeResource {
 }
 impl Resource for TimeResource {}
 
+struct FpsResource {
+    pub last_measure_seconds: usize,
+    pub count: usize,
+}
+impl Resource for FpsResource {}
+
 fn init_resources(mut world: ExclusiveWorldAccess) {
     world.resources_mut().insert(SampleResource { });
+    world.resources_mut().insert(FpsResource { last_measure_seconds: 0, count: 0 });
     world.resources_mut().insert(TimeResource { time: 0.0_f32, start: None });
 
     world.resources_mut().insert(AssetStorageResource::<Mesh>::new());
@@ -65,8 +75,9 @@ fn init_mesh_material(mut world: ExclusiveWorldAccess) {
     let (material, mesh) = {
         let camera_group_layout = &*world.resources().get::<CameraUniformBufferGroupLayoutResource>().unwrap();
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
+        let render_state = render_state.get();
 
-        let render_state = &*render_state.get().lock().unwrap();
+        let render_state = &*render_state.lock().unwrap();
         let device = render_state.device();
         let surface_config = render_state.surface_config();
 
@@ -123,9 +134,14 @@ fn init_mesh_material(mut world: ExclusiveWorldAccess) {
     let material = world.resources_mut().get_mut::<AssetStorageResource::<Material>>().unwrap().insert(material);
     let mesh = world.resources_mut().get_mut::<AssetStorageResource::<Mesh>>().unwrap().insert(mesh);
     
-    let entity = world.entities_components_mut().create_entity();
-    world.entities_components_mut().add_component(entity, RenderMeshComponent { mesh });
-    world.entities_components_mut().add_component(entity, RenderMaterialComponent { material });
+    for _ in 0..3 {
+        let entity = world.entities_components_mut().create_entity();
+        println!("created entity: i={}, v={}", entity.version_index().index, entity.version_index().version);
+        world.entities_components_mut().add_component(entity, RenderMeshComponent { mesh: mesh.clone() });
+        world.entities_components_mut().add_component(entity, RenderMaterialComponent { material: material.clone() });
+        world.entities_components_mut().add_component(entity, GlobalTransform { scale_rotation: Matrix3x3::IDENTITY, position: Vec3::with_all(0.0) });
+        world.entities_components_mut().add_component(entity, MovingCubeComponent);
+    }
 }
 
 fn update_time(
@@ -148,8 +164,46 @@ fn move_camera(
     query: WorldQuery<(&mut GlobalTransform, &CameraComponent)>,
 ) {
     for (transform, _) in query.iter() {
-        transform.position.x = time.time.sin().abs() * 1.0_f32;
-        transform.position.y = time.time.cos() * 1.0_f32;
+        //transform.position.x = time.time.sin() * 0.5_f32;
+        //transform.position.y = time.time.cos() * 0.5_f32;
         //transform.position.z = -3.0_f32 + time.time.cos() * 10.0_f32;
+
+        //transform.scale_rotation = Matrix3x3::rotation_y(time.time);
+    }
+}
+
+fn move_cube(
+    time: Res<TimeResource>,
+    query: WorldQuery<(Entity, &mut GlobalTransform, &MovingCubeComponent)>,
+) {
+    for (entity, transform, _) in query.iter() {
+        let i = entity.version_index().index;
+
+        if i == 1 {
+            transform.position.x = time.time.cos() * 0.5_f32;
+        } else if i == 2 {
+            transform.position.y = time.time.cos() * 0.5_f32;
+        } else if i == 3 {
+            transform.position.z = time.time.cos() * 0.5_f32;
+        } else if i == 4 {
+            transform.scale_rotation = Matrix3x3::rotation_y(time.time * 1.0_f32) * Matrix3x3::rotation_z(-45.0_f32.to_radians());
+        }
+
+        //transform.position.x = time.time.sin() * 0.5_f32;
+        //transform.position.y = time.time.cos() * 0.5_f32;
+    }
+}
+
+fn log_fps(
+    mut fps: ResMut<FpsResource>,
+    time: Res<TimeResource>,
+) {
+    fps.count += 1;
+
+    if time.time - fps.last_measure_seconds as f32 >= 1.0_f32 {
+        println!("fps: {}", fps.count);
+        fps.last_measure_seconds = time.time.floor() as usize;
+
+        fps.count = 0;
     }
 }

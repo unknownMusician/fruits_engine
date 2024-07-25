@@ -249,7 +249,7 @@ impl Archetype {
         Some(component)
     }
 
-    pub fn create_entity(&mut self) -> usize {
+    fn create_place_for_entity(&mut self) -> usize {
         // todo: initialize components
         let entity_in_archetype_index = self.alive_entities_count;
 
@@ -262,6 +262,17 @@ impl Archetype {
         self.alive_entities_count += 1;
 
         entity_in_archetype_index
+    }
+
+    pub fn create_entity(&mut self, entity: Entity) {
+        let entity_in_archetype_index = self.create_place_for_entity();
+
+        let entity_location = self.layout.entity_memory_physical_location(self.alive_entities_count - 1);
+
+        unsafe {
+            let entity_mem = self.archetype.get_memory(&entity_location);
+            *(entity_mem.0 as *mut Entity) = entity;
+        }
     }
 
     /// Returns the last entity before the destroy.
@@ -321,7 +332,7 @@ impl Archetype {
             return Err(component);
         }
 
-        let dst_entity_index = dst.create_entity();
+        let dst_entity_index = dst.create_place_for_entity();
 
         let src_components_locations = Self::get_items_locations_iter(&src.layout, src_entity_index, &src.layout);
         let dst_components_locations = Self::get_items_locations_iter(&src.layout, dst_entity_index, &dst.layout);
@@ -358,7 +369,7 @@ impl Archetype {
             return None;
         }
 
-        let dst_entity_index = dst.create_entity();
+        let dst_entity_index = dst.create_place_for_entity();
 
         let src_components_locations = Self::get_items_locations_iter(&dst.layout, src_entity_index, &src.layout);
         let dst_components_locations = Self::get_items_locations_iter(&dst.layout, dst_entity_index, &dst.layout);

@@ -1,7 +1,7 @@
 
 use wgpu::{BindGroupLayout, Device, RenderPipeline, SurfaceConfiguration};
 
-use super::{mesh::StandardVertex, shader::Shader};
+use super::{mesh::StandardVertex, shader::Shader, StandardInstance};
 
 pub struct Material {
     render_pipeline: RenderPipeline,
@@ -31,7 +31,9 @@ impl Material {
                 entry_point: "vs_main",
                 buffers: &[
                     StandardVertex::desc(),
+                    StandardInstance::desc(),
                 ],
+                compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -41,6 +43,7 @@ impl Material {
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
+                compilation_options: Default::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
@@ -58,6 +61,7 @@ impl Material {
                 alpha_to_coverage_enabled: false,
             },
             multiview: None,
+            cache: None,
         });
 
         Self {

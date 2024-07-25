@@ -6,12 +6,6 @@ pub struct SurfaceTextureResource {
 }
 impl Resource for SurfaceTextureResource { }
 
-pub struct UniformBindGroupResource {
-    pub layout: Option<BindGroupLayout>,
-    pub bind_group: Option<BindGroup>,
-}
-impl Resource for UniformBindGroupResource { }
-
 pub struct CameraUniformBufferResource {
     pub buffer: Buffer,
     pub group: BindGroup,
@@ -34,3 +28,8 @@ impl CameraUniformBufferGroupLayoutResource {
         &self.layout
     }
 }
+
+pub struct InstanceBufferResource {
+    pub buffer: Buffer,
+}
+impl Resource for InstanceBufferResource { }

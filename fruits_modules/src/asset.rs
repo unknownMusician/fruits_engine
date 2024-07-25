@@ -18,10 +18,18 @@ pub struct AssetStorageResource<T> {
 }
 impl<T: 'static + Send + Sync> Resource for AssetStorageResource<T> { }
 
-#[derive(Copy, Clone)]
 pub struct AssetHandle<T> {
     index: VersionIndex,
     _phantom: PhantomData<fn(T) -> T>,
+}
+
+impl<T> Clone for AssetHandle<T> {
+    fn clone(&self) -> Self {
+        Self {
+            index: self.index.clone(),
+            _phantom: self._phantom.clone()
+        }
+    }
 }
 
 impl<T> AssetHandle<T> {

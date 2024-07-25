@@ -6,6 +6,12 @@ use fruits_utils::index_version_collection::{
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Entity(VersionIndex);
 
+impl Entity {
+    pub fn version_index(&self) -> VersionIndex {
+        self.0
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct EntityLocation {
     pub archetype_id: usize,

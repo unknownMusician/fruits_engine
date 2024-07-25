@@ -12,6 +12,7 @@ pub fn add_module_to(world: &mut WorldBuilder) {
     
     world.behavior_mut().get_mut(Schedule::Start).add_system(create_camera_uniform_buffer);
     world.behavior_mut().get_mut(Schedule::Start).add_system(create_camera_uniform_bind_group_layout);
+    world.behavior_mut().get_mut(Schedule::Start).add_system(create_instance_buffer);
     world.behavior_mut().get_mut(Schedule::Update).add_system(update_camera_uniform_buffer);
     world.behavior_mut().get_mut(Schedule::Update).add_system(request_surface_texture_view);
     world.behavior_mut().get_mut(Schedule::Update).add_system(render_meshes_and_materials);

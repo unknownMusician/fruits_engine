@@ -1,10 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{
-    data::world_data::WorldData, data_usage::WorldSharedPerTypeDataUsage, system_params::WorldQuery
-};
-
-use fruits_utils::mapped_guard::{MappedGuard, RwLockReadGuarding};
+use crate::data_usage::WorldSharedPerTypeDataUsage;
 
 use super::{
     archetype::{Archetype, ArchetypeIteratorItem}, component::{Component, WorldArchetypes}, data_rw_locker::{DataRwLocker, DataRwLockerGuard},
@@ -125,12 +121,16 @@ impl WorldEntitiesComponents {
 
         let archetype = self.archetypes.by_id_mut(archetype_id).unwrap();
 
-        let entity_archetype_index = archetype.create_entity();
-
-        self.entity_datas.insert(EntityLocation {
+        let entity_archetype_index = archetype.entities_count();
+        
+        let entity = self.entity_datas.insert(EntityLocation {
             archetype_id,
             entity_archetype_index,
-        })
+        });
+        
+        archetype.create_entity(entity);
+
+        entity
     }
 
     pub fn destroy_entity(&mut self, entity: Entity) -> bool {

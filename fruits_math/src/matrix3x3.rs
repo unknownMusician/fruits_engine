@@ -31,6 +31,42 @@ impl<T: Number> Matrix3x3<T> {
     //     ])
     // }
 
+    pub fn rotation_euler(euler: Vec3<T>) -> Self {
+        // todo: optimize and allow for various axis order
+
+        Self::rotation_y(euler.y) * Self::rotation_x(euler.x) * Self::rotation_z(euler.z)
+    }
+
+    pub fn rotation_x(angle: T) -> Self {
+        let matrix = Matrix2x2::from_rotation(angle);
+
+        Matrix3x3::from_array([
+            [T::ONE, T::ZERO, T::ZERO],
+            [T::ZERO, *matrix.get_0_0(), *matrix.get_0_1()],
+            [T::ZERO, *matrix.get_1_0(), *matrix.get_1_1()],
+        ])
+    }
+
+    pub fn rotation_y(angle: T) -> Self {
+        let matrix = Matrix2x2::from_rotation(angle);
+
+        Matrix3x3::from_array([
+            [*matrix.get_0_0(), T::ZERO, *matrix.get_1_0()],
+            [T::ZERO, T::ONE, T::ZERO],
+            [*matrix.get_0_1(), T::ZERO, *matrix.get_1_1()],
+        ])
+    }
+
+    pub fn rotation_z(angle: T) -> Self {
+        let matrix = Matrix2x2::from_rotation(angle);
+
+        Matrix3x3::from_array([
+            [*matrix.get_0_0(), *matrix.get_0_1(), T::ZERO],
+            [*matrix.get_1_0(), *matrix.get_1_1(), T::ZERO],
+            [T::ZERO, T::ZERO, T::ONE],
+        ])
+    }
+
     pub const fn from_array(data: [[T; 3]; 3]) -> Self {
         Self {
             data,
