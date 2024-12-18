@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 use fruits_ecs_resource::Resource;
 use fruits_ecs_macros::Resource;
@@ -12,8 +12,12 @@ impl RenderStateResource {
     pub fn new(state: Arc<RenderAppState>) -> Self {
         Self(state)
     }
+}
 
-    pub fn get(&self) -> &Arc<RenderAppState> {
+impl Deref for RenderStateResource {
+    type Target = Arc<RenderAppState>;
+
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }

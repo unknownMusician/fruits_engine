@@ -68,7 +68,6 @@ fn init(mut world: ExclusiveWorldAccess) {
     let (material, mesh) = {
         let camera_group_layout = &*world.resources().get::<CameraUniformBufferGroupLayoutResource>().unwrap();
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
-        let render_state = render_state.get();
 
         let device = render_state.device();
         let surface_config = &*render_state.surface_config().lock().unwrap();
@@ -109,7 +108,7 @@ fn init(mut world: ExclusiveWorldAccess) {
     let material = world.resources_mut().get_mut::<AssetStorageResource::<Material>>().unwrap().insert(material);
     let mesh = world.resources_mut().get_mut::<AssetStorageResource::<Mesh>>().unwrap().insert(mesh);
     
-    for _ in 0..1000 {
+    for _ in 0..100 {
         let entity = world.entities_components_mut().create_entity();
 
         world.entities_components_mut().add_component(entity, RenderMeshComponent { mesh: mesh.clone() });

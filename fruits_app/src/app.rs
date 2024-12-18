@@ -2,8 +2,9 @@ use std::sync::{Arc, Mutex};
 
 use fruits_ecs_schedule::Schedule;
 use fruits_ecs_world::WorldBuilder;
+use winit::event_loop::EventLoop;
 
-use crate::{render_app::run_render_app, render_state_resource::RenderStateResource};
+use crate::{event_loop_handler::EventLoopHandler, render_state_resource::RenderStateResource};
 
 pub struct App {
     ecs_world: WorldBuilder,
@@ -28,7 +29,7 @@ impl App {
         let world_initializer = Arc::new(Mutex::new(None));
         let world_access = Arc::clone(&world_initializer);
 
-        run_render_app(
+        let mut event_loop_handler = EventLoopHandler::new(
             move |render_state| {
                 let render_state = RenderStateResource::new(Arc::clone(render_state));
 
@@ -42,5 +43,9 @@ impl App {
             },
             move || world_access.lock().unwrap().as_ref().unwrap().execute_iteration(Schedule::Update),
         );
+
+        let event_loop = EventLoop::new().unwrap();
+        event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
+        event_loop.run_app(&mut event_loop_handler).unwrap();
     }
 }

@@ -12,7 +12,7 @@ pub fn create_camera_uniform_bind_group_layout(
 ) {
     let layout = {
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
-        let render_state = render_state.get();
+        let render_state = &*render_state;
 
         render_state.device().create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("Camera bind group layout"),
@@ -41,7 +41,7 @@ pub fn create_camera_uniform_buffer(
         let layout_resource = &*world.resources().get::<CameraUniformBufferGroupLayoutResource>().unwrap();
 
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
-        let render_state = render_state.get();
+        let render_state = &*render_state;
 
         let buffer = render_state.device().create_buffer_init(&BufferInitDescriptor {
             label: Some("Camera Buffer"),
@@ -74,7 +74,7 @@ pub fn create_instance_buffer(
 ) {
     let buffer = {
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
-        let render_state = render_state.get();
+        let render_state = &*render_state;
 
         let buffer = render_state.device().create_buffer_init(&BufferInitDescriptor {
             label: Some("Instance Buffer"),
@@ -110,15 +110,13 @@ pub fn update_camera_uniform_buffer(
     let matrix = matrix.into_array();
     let matrix = unsafe { matrix.align_to::<u8>().1 };
 
-    render_state.get().queue().write_buffer(&buffer.buffer, 0, matrix);
+    render_state.queue().write_buffer(&buffer.buffer, 0, matrix);
 }
 
 pub fn request_surface_texture(
     render_state: Res<RenderStateResource>,
     mut surface_texture: ResMut<SurfaceTextureResource>,
 ) {
-    let render_state = render_state.get();
-    
     surface_texture.texture = render_state.surface().get_current_texture().ok();
 }
 
@@ -145,7 +143,7 @@ pub fn render_meshes_and_materials(
 
     let view = surface_texture.texture.create_view(&TextureViewDescriptor::default());
 
-    let render_state = render_state.get();
+    let render_state = &*render_state;
 
     for (transform, render_mesh, render_material) in query.iter() {
         let Some(mesh) = meshes.get(&render_mesh.mesh) else { continue; };
