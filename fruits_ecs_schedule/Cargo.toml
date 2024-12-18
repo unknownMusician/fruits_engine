@@ -1,0 +1,14 @@
+[package]
+name = "fruits_ecs_schedule"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+fruits_ecs_data = { path = "../fruits_ecs_data" }
+fruits_ecs_data_usage = { path = "../fruits_ecs_data_usage" }
+fruits_ecs_system = { path = "../fruits_ecs_system" }
+fruits_ecs_system_resource = { path = "../fruits_ecs_system_resource" }
+fruits_utils = { path = "../fruits_utils" }

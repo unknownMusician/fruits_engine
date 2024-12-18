@@ -1,4 +1,5 @@
-workspace = { members = [ "fruits_alloc_monitor", "fruits_app","fruits_ecs", "fruits_example", "fruits_math", "fruits_modules", "fruits_utils", "fruits_window", "hlib_test"] }
+workspace = { members = [ "fruits_alloc_monitor", "fruits_app", "fruits_example/fruits_example_cubes", "fruits_example/fruits_example_boids", "fruits_math", "fruits_modules", "fruits_utils", "fruits_window", "hlib_test" , "fruits_ecs_macros", "fruits_serialization", "fruits_gui", "fruits_ecs_system", "fruits_ecs_data_usage", "fruits_ecs_resource", "fruits_ecs_component", "fruits_prelude", "fruits_ecs_world", "fruits_ecs_schedule", "fruits_ecs_data", "fruits_ecs_system_resource", "fruits_ecs_system_params"] }
+
 [package]
 name = "fruits_engine"
 version = "0.1.0"

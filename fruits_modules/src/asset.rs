@@ -1,12 +1,10 @@
 use std::marker::PhantomData;
 
-use fruits_ecs::data::resource::Resource;
+use fruits_ecs_resource::Resource;
 use fruits_utils::index_version_collection::{
     VersionCollection,
     VersionIndex,
 };
-
-
 
 pub struct AssetWithVersion<T> {
     pub asset: T,

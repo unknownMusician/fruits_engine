@@ -4,12 +4,13 @@ use std::collections::HashMap;
 use strategies::TypedMapStrategy;
 
 pub mod strategies {
-    use std::any::Any;
+    use std::{any::Any, ops::Deref};
 
     trait Sealed { }
 
     impl Sealed for DefaultStrategy { }
-    impl Sealed for ThreadedStrategy { }
+    impl Sealed for SendStrategy { }
+    impl Sealed for SendSyncStrategy { }
 
     #[allow(private_bounds)]
     pub trait TypedMapStrategy : Sealed {
@@ -32,8 +33,21 @@ pub mod strategies {
         }
     }
 
-    pub struct ThreadedStrategy;
-    impl TypedMapStrategy for ThreadedStrategy {
+    pub struct SendStrategy;
+    impl TypedMapStrategy for SendStrategy {
+        type ValueBase = Box<dyn Any + Send>;
+
+        fn downcast_ref<R: 'static>(stored: &Self::ValueBase) -> Option<&R> {
+            stored.downcast_ref::<R>()
+        }
+
+        fn downcast_mut<R: 'static>(stored: &mut Self::ValueBase) -> Option<&mut R> {
+            stored.downcast_mut::<R>()
+        }
+    }
+
+    pub struct SendSyncStrategy;
+    impl TypedMapStrategy for SendSyncStrategy {
         type ValueBase = Box<dyn Any + Send + Sync>;
 
         fn downcast_ref<R: 'static>(stored: &Self::ValueBase) -> Option<&R> {
@@ -55,6 +69,10 @@ impl<Strategy: TypedMapStrategy> TypedMap<Strategy> {
         Self { data: HashMap::new() }
     }
 
+    pub fn contains<T: 'static + Any>(&self) -> bool {
+        self.data.contains_key(&TypeId::of::<T>())
+    }
+
     pub fn get_ref<T: 'static + Any>(&self) -> Option<&T> {
         self.data
             .get(&TypeId::of::<T>())
@@ -74,8 +92,14 @@ impl TypedMap<strategies::DefaultStrategy> {
     }
 }
 
-impl TypedMap<strategies::ThreadedStrategy> {
+impl TypedMap<strategies::SendSyncStrategy> {
     pub fn insert<T: 'static + Any + Send + Sync>(&mut self, v: T) {
+        self.data.insert(TypeId::of::<T>(), Box::new(v));
+    }
+}
+
+impl TypedMap<strategies::SendStrategy> {
+    pub fn insert<T: 'static + Any + Send>(&mut self, v: T) {
         self.data.insert(TypeId::of::<T>(), Box::new(v));
     }
 }

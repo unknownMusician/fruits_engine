@@ -22,6 +22,11 @@ macro_rules! add_all {
     ($x: tt, $($xs: tt),+) => ($x + add_all!($($xs),+));
 }
 
+macro_rules! and_all {
+    ($x: tt) => (true);
+    ($x: tt, $($xs: tt),+) => ($x & and_all!($($xs),+));
+}
+
 macro_rules! vec_impl {
     ($V: ident, $($I: ident),+) => {
         #[derive(Copy, Clone)]
@@ -61,6 +66,24 @@ macro_rules! vec_impl {
 
             pub fn length(&self) -> f64 {
                 self.dot(self).into_f64().sqrt()
+            }
+
+            pub fn normalized(&self) -> Self {
+                *self / T::from_f64(self.length())
+            }
+
+            pub fn normalized_or_0(&self) -> Self {
+                if self == &Self::with_all(T::ZERO) {
+                    *self
+                } else {
+                    self.normalized()
+                }
+            }
+        }
+
+        impl<T: Number> PartialEq for $V<T> {
+            fn eq(&self, rhs: &Self) -> bool {
+                and_all!($((self.$I == rhs.$I)),+)
             }
         }
 

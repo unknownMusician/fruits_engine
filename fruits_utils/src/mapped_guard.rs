@@ -1,12 +1,9 @@
 use std::{
-    ops::{
+    cell::{Ref, RefMut}, marker::PhantomData, ops::{
         Deref,
         DerefMut,
-    },
-    sync::{
-        MutexGuard,
-        RwLockReadGuard,
-        RwLockWriteGuard,
+    }, sync::{
+        Arc, MutexGuard, RwLockReadGuard, RwLockWriteGuard
     }
 };
 
@@ -14,19 +11,25 @@ trait Sealed { }
 impl Sealed for RwLockReadGuarding { }
 impl Sealed for RwLockWriteGuarding { }
 impl Sealed for MutexGuarding { }
+impl Sealed for RefCellReadGuarding { }
+impl Sealed for RefCellWriteGuarding { }
+impl Sealed for ArcGuarding { }
 // todo: implement MappableGuarding for MappedGuard
+// impl<'oo, Guarding: MappableGuarding, HiddenOrigin: 'oo> Sealed for RecursiveGuarding<'oo, Guarding, HiddenOrigin> { }
 
 //
 
 #[allow(private_bounds)]
-pub trait MappableGuarding : Sealed + 'static {
+pub trait MappableGuarding : Sealed {
     type Guard<'o, Origin: 'o>;
 
-    fn get_ref<'a, 'o: 'a, T: 'o>(guard: &'a Self::Guard<'o, T>) -> &'o T;
+    // unsafe because allows multiple different references from a single guard.
+    unsafe fn get_ref<'o, T: 'o>(guard: &Self::Guard<'o, T>) -> &'o T;
 }
 
 pub trait MutMappableGuarding : MappableGuarding {
-    fn get_mut<'a, 'o: 'a, T: 'o>(guard: &'a mut Self::Guard<'o, T>) -> &'o mut T;
+    // unsafe because allows multiple different references from a single guard.
+    unsafe fn get_mut<'o, T: 'o>(guard: &mut Self::Guard<'o, T>) -> &'o mut T;
 }
 
 //
@@ -35,8 +38,8 @@ pub struct RwLockReadGuarding;
 impl MappableGuarding for RwLockReadGuarding {
     type Guard<'o, Origin: 'o> = RwLockReadGuard<'o, Origin>;
     
-    fn get_ref<'a, 'o: 'a, T: 'o>(guard: &'a Self::Guard<'o, T>) -> &'o T {
-        unsafe { &*(guard as *const Self::Guard<'o, T>) }
+    unsafe fn get_ref<'o, T: 'o>(guard: &Self::Guard<'o, T>) -> &'o T {
+        &*(guard as *const Self::Guard<'o, T>)
     }
 }
 
@@ -44,31 +47,77 @@ pub struct RwLockWriteGuarding;
 impl MappableGuarding for RwLockWriteGuarding {
     type Guard<'o, Origin: 'o> = RwLockWriteGuard<'o, Origin>;
     
-    fn get_ref<'a, 'o: 'a, T: 'o>(guard: &'a Self::Guard<'o, T>) -> &'o T {
-        unsafe { &*(guard as *const Self::Guard<'o, T>) }
+    unsafe fn get_ref<'o, T: 'o>(guard: &Self::Guard<'o, T>) -> &'o T {
+        &*(guard as *const Self::Guard<'o, T>)
     }
 }
 
 impl MutMappableGuarding for RwLockWriteGuarding {
-    fn get_mut<'a, 'o: 'a, T: 'o>(guard: &'a mut Self::Guard<'o, T>) -> &'o mut T {
-        unsafe { &mut *(guard as *mut Self::Guard<'o, T>) }
+    unsafe fn get_mut<'o, T: 'o>(guard: &mut Self::Guard<'o, T>) -> &'o mut T {
+        &mut *(guard as *mut Self::Guard<'o, T>)
     }
 }
 
 pub struct MutexGuarding;
 impl MappableGuarding for MutexGuarding {
-    type Guard<'a, Origin: 'a> = MutexGuard<'a, Origin>;
+    type Guard<'o, Origin: 'o> = MutexGuard<'o, Origin>;
 
-    fn get_ref<'a, 'o: 'a, T: 'o>(guard: &'a Self::Guard<'o, T>) -> &'o T {
-        unsafe { &*(guard as *const Self::Guard<'o, T>) }
+    unsafe fn get_ref<'o, T: 'o>(guard: &Self::Guard<'o, T>) -> &'o T {
+        &*(guard as *const Self::Guard<'o, T>)
     }
 }
 
 impl MutMappableGuarding for MutexGuarding {
-    fn get_mut<'a, 'o: 'a, T: 'o>(guard: &'a mut Self::Guard<'o, T>) -> &'o mut T {
-        unsafe { &mut *(guard as *mut Self::Guard<'o, T>) }
+    unsafe fn get_mut<'o, T: 'o>(guard: &mut Self::Guard<'o, T>) -> &'o mut T {
+        &mut *(guard as *mut Self::Guard<'o, T>)
     }
 }
+
+pub struct RefCellReadGuarding;
+impl MappableGuarding for RefCellReadGuarding {
+    type Guard<'o, Origin: 'o> = Ref<'o, Origin>;
+
+    unsafe fn get_ref<'o, T: 'o>(guard: &Self::Guard<'o, T>) -> &'o T {
+        &*(guard as *const Self::Guard<'o, T>)
+    }
+}
+
+pub struct RefCellWriteGuarding;
+impl MappableGuarding for RefCellWriteGuarding {
+    type Guard<'o, Origin: 'o> = RefMut<'o, Origin>;
+
+    unsafe fn get_ref<'o, T: 'o>(guard: &Self::Guard<'o, T>) -> &'o T {
+        &*(guard as *const Self::Guard<'o, T>)
+    }
+}
+
+impl MutMappableGuarding for RefCellWriteGuarding {
+    unsafe fn get_mut<'o, T: 'o>(guard: &mut Self::Guard<'o, T>) -> &'o mut T {
+        &mut *(guard as *mut Self::Guard<'o, T>)
+    }
+}
+
+pub struct ArcGuarding;
+impl MappableGuarding for ArcGuarding {
+    type Guard<'o, Origin: 'o> = Arc<Origin>;
+
+    unsafe fn get_ref<'o, T: 'o>(guard: &Self::Guard<'o, T>) -> &'o T {
+        &*(guard as *const Self::Guard<'o, T>)
+    }
+}
+
+// #[derive(Default)]
+// pub struct RecursiveGuarding<'o, Guarding: MappableGuarding, Origin: 'o>{
+//     _phantom: PhantomData<(Guarding, &'o Origin)>,
+// }
+
+// impl<'oo, Guarding: MappableGuarding, HiddenOrigin: 'oo> MappableGuarding for RecursiveGuarding<'oo, Guarding, HiddenOrigin> {
+//     type Guard<'o, Origin: 'o> = MappedGuard<'oo, Guarding, HiddenOrigin, Origin>;
+
+//     unsafe fn get_ref<'o, T: 'o>(guard: &Self::Guard<'o, T>) -> &'o T {
+//         &*(guard as *const Self::Guard<'o, T>)
+//     }
+// }
 
 //
 
@@ -79,13 +128,11 @@ pub struct MappedGuard<'o, Guarding: MappableGuarding, Origin: 'o, Mapped> {
 
 impl<'o, Guarding: MappableGuarding, Origin: 'o> MappedGuard<'o, Guarding, Origin, &'o Origin> {
     pub fn map_from_flat_ref(guard: Guarding::Guard<'o, Origin>) -> Self {
-        let guard_ref: &'o Origin = Guarding::get_ref(&guard);
-        // let guard_ptr = &guard as *const Guarding::Guard<'o, Origin>;
-        // let ptr = Guarding::get_ref(unsafe { &*guard_ptr }) as *const Origin;
+        // safe because only one mutable reference is held
+        let guard_ref: &'o Origin = unsafe { Guarding::get_ref(&guard) };
 
         Self {
             _guard: guard,
-            // mapped: unsafe { &*ptr },
             mapped: guard_ref,
         }
     }
@@ -93,13 +140,11 @@ impl<'o, Guarding: MappableGuarding, Origin: 'o> MappedGuard<'o, Guarding, Origi
 
 impl<'o, Guarding: MutMappableGuarding, Origin: 'o> MappedGuard<'o, Guarding, Origin, &'o mut Origin> {
     pub fn map_from_flat_mut(mut guard: Guarding::Guard<'o, Origin>) -> Self {
-        let guard_mut = Guarding::get_mut(&mut guard);
-        // let guard_ptr = &mut guard as *mut Guarding::Guard<'a, Origin>;
-        // let ptr = Guarding::get_mut(unsafe { &mut *guard_ptr }) as *mut Origin;
+        // safe because only one mutable reference is held
+        let guard_mut = unsafe { Guarding::get_mut(&mut guard) };
 
         Self {
             _guard: guard,
-            // mapped: unsafe { &mut *ptr },
             mapped: guard_mut,
         }
     }

@@ -1,7 +1,7 @@
 use fruits_app::RenderStateResource;
-use fruits_ecs::system_params::{ExclusiveWorldAccess, Res, ResMut, WorldQuery};
+use fruits_ecs_system_params::{ExclusiveWorldAccess, Res, ResMut, WorldQuery};
 use fruits_math::{Matrix, Matrix4x4};
-use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BufferBindingType, BufferUsages, Color, CommandEncoderDescriptor, IndexFormat, LoadOp, Operations, RenderPassColorAttachment, RenderPassDescriptor, ShaderStages, StoreOp, TextureViewDescriptor};
+use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BufferBindingType, BufferUsages, CommandEncoderDescriptor, IndexFormat, LoadOp, Operations, RenderPassColorAttachment, RenderPassDescriptor, ShaderStages, StoreOp, TextureViewDescriptor};
 
 use crate::{asset::AssetStorageResource, transform::GlobalTransform};
 
@@ -12,7 +12,7 @@ pub fn create_camera_uniform_bind_group_layout(
 ) {
     let layout = {
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
-        let render_state = render_state.get().lock().unwrap();
+        let render_state = render_state.get();
 
         render_state.device().create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("Camera bind group layout"),
@@ -41,7 +41,7 @@ pub fn create_camera_uniform_buffer(
         let layout_resource = &*world.resources().get::<CameraUniformBufferGroupLayoutResource>().unwrap();
 
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
-        let render_state = render_state.get().lock().unwrap();
+        let render_state = render_state.get();
 
         let buffer = render_state.device().create_buffer_init(&BufferInitDescriptor {
             label: Some("Camera Buffer"),
@@ -74,7 +74,7 @@ pub fn create_instance_buffer(
 ) {
     let buffer = {
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
-        let render_state = render_state.get().lock().unwrap();
+        let render_state = render_state.get();
 
         let buffer = render_state.device().create_buffer_init(&BufferInitDescriptor {
             label: Some("Instance Buffer"),
@@ -110,14 +110,14 @@ pub fn update_camera_uniform_buffer(
     let matrix = matrix.into_array();
     let matrix = unsafe { matrix.align_to::<u8>().1 };
 
-    render_state.get().lock().unwrap().queue().write_buffer(&buffer.buffer, 0, matrix);
+    render_state.get().queue().write_buffer(&buffer.buffer, 0, matrix);
 }
 
-pub fn request_surface_texture_view(
+pub fn request_surface_texture(
     render_state: Res<RenderStateResource>,
     mut surface_texture: ResMut<SurfaceTextureResource>,
 ) {
-    let render_state = render_state.get().lock().unwrap();
+    let render_state = render_state.get();
     
     surface_texture.texture = render_state.surface().get_current_texture().ok();
 }
@@ -145,7 +145,7 @@ pub fn render_meshes_and_materials(
 
     let view = surface_texture.texture.create_view(&TextureViewDescriptor::default());
 
-    let render_state = render_state.get().lock().unwrap();
+    let render_state = render_state.get();
 
     for (transform, render_mesh, render_material) in query.iter() {
         let Some(mesh) = meshes.get(&render_mesh.mesh) else { continue; };
@@ -154,14 +154,6 @@ pub fn render_meshes_and_materials(
         let transform_matrix = fruits_math::into_matrix4x4_with_pos(transform.scale_rotation, transform.position);
         let transform_matrix = transform_matrix.into_array();
         let transform_matrix = unsafe { transform_matrix.align_to::<u8>().1 };
-
-        // instance_buffer.buffer.slice(..).map_async(wgpu::MapMode::Write, |result| {
-        //     result.unwrap();
-        // });
-        
-        // render_state.device().poll(wgpu::Maintain::Wait);
-
-        // instance_buffer.buffer.slice(..).get_mapped_range_mut().copy_from_slice(transform_matrix);
 
         render_state.queue().write_buffer(&instance_buffer.buffer, 0, transform_matrix);
         render_state.queue().submit([]);
@@ -178,12 +170,6 @@ pub fn render_meshes_and_materials(
                     resolve_target: None,
                     ops: Operations {
                         load: LoadOp::Load,
-                        // load: LoadOp::Clear(Color {
-                        //     r: 1.0,
-                        //     g: 1.0,
-                        //     b: 0.5,
-                        //     a: 1.0,
-                        // }),
                         store: StoreOp::Store,
                     },
                 })],

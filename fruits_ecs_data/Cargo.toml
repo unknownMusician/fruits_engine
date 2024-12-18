@@ -1,0 +1,11 @@
+[package]
+name = "fruits_ecs_data"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+fruits_ecs_component = { path = "../fruits_ecs_component" }
+fruits_ecs_resource = { path = "../fruits_ecs_resource" }

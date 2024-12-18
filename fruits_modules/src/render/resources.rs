@@ -1,21 +1,22 @@
-use fruits_ecs::data::resource::Resource;
+use fruits_ecs_resource::Resource;
+use fruits_ecs_macros::Resource;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, SurfaceTexture};
 
+#[derive(Resource)]
 pub struct SurfaceTextureResource {
     pub texture: Option<SurfaceTexture>,
 }
-impl Resource for SurfaceTextureResource { }
 
+#[derive(Resource)]
 pub struct CameraUniformBufferResource {
     pub buffer: Buffer,
     pub group: BindGroup,
 }
-impl Resource for CameraUniformBufferResource { }
 
+#[derive(Resource)]
 pub struct CameraUniformBufferGroupLayoutResource {
     layout: BindGroupLayout,
 }
-impl Resource for CameraUniformBufferGroupLayoutResource { }
 
 impl CameraUniformBufferGroupLayoutResource {
     pub fn new(layout: BindGroupLayout) -> Self {
@@ -29,7 +30,7 @@ impl CameraUniformBufferGroupLayoutResource {
     }
 }
 
+#[derive(Resource)]
 pub struct InstanceBufferResource {
     pub buffer: Buffer,
 }
-impl Resource for InstanceBufferResource { }

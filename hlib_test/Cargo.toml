@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 fruits_math = { path = "../fruits_math" }
+fruits_serialization = { path = "../fruits_serialization" }
+fruits_prelude = { path = "../fruits_prelude" }

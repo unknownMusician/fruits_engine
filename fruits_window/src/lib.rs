@@ -1,4 +1,4 @@
-use std::{ops::Deref, sync::{Arc, Mutex}};
+use std::sync::{Arc, Mutex};
 
 use wgpu::{
     Backends, Device, DeviceDescriptor, Features, Instance, InstanceDescriptor, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, TextureUsages
@@ -56,6 +56,7 @@ impl<S: FnOnce(&Arc<Mutex<RenderAppState>>) + 'static, U: FnMut() + 'static, E: 
 
         let size = window.inner_size();
         
+        // todo: move wgpu initialization into ecs Start handle?
         let instance = Instance::new(InstanceDescriptor {
             backends: Backends::DX12,
             dx12_shader_compiler: Default::default(),

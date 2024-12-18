@@ -9,5 +9,10 @@ edition = "2021"
 crate-type = ["lib"]
 
 [dependencies]
-fruits_ecs = { path = "../fruits_ecs" }
-fruits_window = { path = "../fruits_window" }
+pollster = "0.3"
+winit = "0.30.4"
+wgpu = "22.0.0"
+fruits_ecs_macros = { path = "../fruits_ecs_macros" }
+fruits_ecs_resource = { path = "../fruits_ecs_resource" }
+fruits_ecs_world = { path = "../fruits_ecs_world" }
+fruits_ecs_schedule = { path = "../fruits_ecs_schedule" }

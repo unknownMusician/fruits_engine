@@ -1,0 +1,17 @@
+[package]
+name = "fruits_prelude"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+fruits_app = { path = "../fruits_app" }
+fruits_ecs_component = { path = "../fruits_ecs_component" }
+fruits_ecs_macros = { path = "../fruits_ecs_macros" }
+fruits_ecs_resource = { path = "../fruits_ecs_resource" }
+fruits_ecs_schedule = { path = "../fruits_ecs_schedule" }
+fruits_ecs_system = { path = "../fruits_ecs_system" }
+fruits_ecs_system_params = { path = "../fruits_ecs_system_params" }
+fruits_ecs_world = { path = "../fruits_ecs_world" }
