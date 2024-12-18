@@ -1,87 +1,58 @@
 use std::sync::Arc;
 
+use fruits_ecs_schedule::Schedule;
+use fruits_ecs_world::{World, WorldBuilder};
 use wgpu::*;
 use winit::{application::ApplicationHandler, dpi::PhysicalSize, event::{ElementState, KeyEvent, WindowEvent}, event_loop::ActiveEventLoop, keyboard::{Key, NamedKey}, window::WindowAttributes};
 
-use crate::render_app_state::RenderAppState;
+use crate::{render_app_state::RenderAppState, RenderStateResource};
 
-enum EventLoopHandlerState<S: FnOnce(&Arc<RenderAppState>) + 'static, U: FnMut() + 'static> {
-    Created {
-        event_loop_start_handler: S,
-        event_loop_update_handler: U,
-    },
-    Creating,
+enum EventLoopHandlerState {
+    Created(WorldBuilder),
+    Starting,
     Polling {
-        event_loop_update_handler: U,
         state: Arc<RenderAppState>,
+        world: World,
     },
 }
 
-impl<S: FnOnce(&Arc<RenderAppState>) + 'static, U: FnMut() + 'static> EventLoopHandlerState<S, U> {
-    fn try_start_creating(&mut self) -> Option<(S, U)> {
+impl EventLoopHandlerState {
+    fn try_start_creating(&mut self) -> Option<WorldBuilder> {
         let EventLoopHandlerState::Created { .. } = self else {
             return None;
         };
 
-        let EventLoopHandlerState::Created {
-            event_loop_start_handler,
-            event_loop_update_handler,
-        } = std::mem::replace(self, EventLoopHandlerState::Creating) else {
+        let EventLoopHandlerState::Created(world) = std::mem::replace(self, EventLoopHandlerState::Starting) else {
             return None;
         };
 
-        Some((event_loop_start_handler, event_loop_update_handler))
+        Some(world)
     }
 }
 
-pub struct EventLoopHandler<S: FnOnce(&Arc<RenderAppState>) + 'static, U: FnMut() + 'static> {
-    state: EventLoopHandlerState<S, U>,
-}
+pub struct EventLoopHandler(EventLoopHandlerState);
 
-impl<S: FnOnce(&Arc<RenderAppState>) + 'static, U: FnMut() + 'static> EventLoopHandler<S, U> {
-    pub fn new(
-        event_loop_start_handler: S,
-        event_loop_update_handler: U,
-    ) -> Self {
-        Self {
-            state: EventLoopHandlerState::Created {
-                event_loop_start_handler,
-                event_loop_update_handler,
-            },
-        }
-    }
-
-    fn resize(state: &RenderAppState, new_size: PhysicalSize<u32>) {
-        if new_size.width <= 0 || new_size.height <= 0 {
-            return;
-        }
-
-        let mut size = state.size().lock().unwrap();
-        let mut surface_config = state.surface_config().lock().unwrap();
-
-        *size = new_size;
-        surface_config.width = new_size.width;
-        surface_config.height = new_size.height;
-        state.surface().configure(&state.device(), &surface_config);
+impl EventLoopHandler {
+    pub fn new(world: WorldBuilder) -> Self {
+        Self(EventLoopHandlerState::Created(world))
     }
 }
 
-impl<S: FnOnce(&Arc<RenderAppState>) + 'static, U: FnMut() + 'static> ApplicationHandler for EventLoopHandler<S, U> {
+impl ApplicationHandler for EventLoopHandler {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let Some((
-            event_loop_start_handler,
-            event_loop_update_handler,
-        )) = self.state.try_start_creating() else {
+        let Some(mut world) = self.0.try_start_creating() else {
             return;
         };
 
         let state = Arc::new(create_render_app_state(event_loop));
 
-        event_loop_start_handler(&state);
+        world.data_mut().resources_mut().insert(RenderStateResource::new(Arc::clone(&state)));
+        let world = world.build();
+        world.execute_iteration(Schedule::Start);
 
-        self.state = EventLoopHandlerState::Polling {
-            event_loop_update_handler,
+        self.0 = EventLoopHandlerState::Polling {
             state,
+            world,
         };
     }
 
@@ -91,10 +62,7 @@ impl<S: FnOnce(&Arc<RenderAppState>) + 'static, U: FnMut() + 'static> Applicatio
         window_id: winit::window::WindowId,
         event: WindowEvent,
     ) {
-        let EventLoopHandlerState::Polling {
-            event_loop_update_handler,
-            state,
-        } = &mut self.state else {
+        let EventLoopHandlerState::Polling { state, world} = &mut self.0 else {
             return;
         };
 
@@ -112,10 +80,10 @@ impl<S: FnOnce(&Arc<RenderAppState>) + 'static, U: FnMut() + 'static> Applicatio
                 ..
             } => event_loop.exit(),
             WindowEvent::Resized(physical_size) => {
-                Self::resize(&*state, physical_size);
+                resize(&*state, physical_size);
             }
             WindowEvent::RedrawRequested => {
-                event_loop_update_handler();
+                world.execute_iteration(Schedule::Update);
                 state.window().request_redraw();
             }
             WindowEvent::Destroyed => {
@@ -124,6 +92,20 @@ impl<S: FnOnce(&Arc<RenderAppState>) + 'static, U: FnMut() + 'static> Applicatio
             _ => {}
         }
     }
+}
+
+fn resize(state: &RenderAppState, new_size: PhysicalSize<u32>) {
+    if new_size.width <= 0 || new_size.height <= 0 {
+        return;
+    }
+
+    let mut size = state.size().lock().unwrap();
+    let mut surface_config = state.surface_config().lock().unwrap();
+
+    *size = new_size;
+    surface_config.width = new_size.width;
+    surface_config.height = new_size.height;
+    state.surface().configure(&state.device(), &surface_config);
 }
 
 fn create_render_app_state(event_loop: &ActiveEventLoop) -> RenderAppState {
