@@ -4,7 +4,7 @@ use fruits_ecs_data::WorldData;
 use fruits_ecs_system::{SystemInput, SystemWithMarker};
 use fruits_utils::thread_pool::ThreadPool;
 use fruits_ecs_system::System;
-use fruits_ecs_system_resource::SystemStatesHolder;
+use fruits_ecs_system_resource::SystemResourcesHolder;
 
 use crate::order_graph::OrderGraph;
 
@@ -12,7 +12,7 @@ use super::system_order;
 
 pub struct ScheduleBehavior {
     systems: Arc<[Arc<dyn System>]>,
-    system_datas: Arc<[Mutex<SystemStatesHolder>]>,
+    system_datas: Arc<[Mutex<SystemResourcesHolder>]>,
     execution_graph: Arc<OrderGraph>,
     thread_pool: ThreadPool,
 }
@@ -20,7 +20,7 @@ pub struct ScheduleBehavior {
 impl ScheduleBehavior {
     pub fn new(systems: Arc<[Arc<dyn System>]>, execution_graph: Arc<OrderGraph>) -> Self {
         Self {
-            system_datas: systems.iter().map(|_| Mutex::new(SystemStatesHolder::new())).collect::<Arc<_>>(),
+            system_datas: systems.iter().map(|_| Mutex::new(SystemResourcesHolder::new())).collect::<Arc<_>>(),
             systems,
             execution_graph,
             thread_pool: ThreadPool::new(Self::non_main_threads_count())

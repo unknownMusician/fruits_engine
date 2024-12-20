@@ -75,7 +75,6 @@ fn init_mesh_material(mut world: ExclusiveWorldAccess) {
     let (material, mesh) = {
         let camera_group_layout = &*world.resources().get::<CameraUniformBufferGroupLayoutResource>().unwrap();
         let render_state = world.resources().get::<RenderStateResource>().unwrap();
-        let render_state = render_state.get();
 
         let device = render_state.device();
         let surface_config = &*render_state.surface_config().lock().unwrap();

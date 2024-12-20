@@ -2,7 +2,24 @@ use std::time::Instant;
 
 use fruits_prelude::*;
 use fruits_math::{Matrix, Matrix3x3, Vec3};
-use fruits_modules::{asset::AssetStorageResource, render::{assets::{Material, Mesh, Shader, StandardVertex}, components::{CameraComponent, RenderMaterialComponent, RenderMeshComponent}, resources::CameraUniformBufferGroupLayoutResource}, transform::{self, GlobalTransform}};
+use fruits_modules::{
+    asset::AssetStorageResource,
+    render::{
+        assets::{
+            Material,
+            Mesh,
+            Shader,
+            StandardVertex,
+        },
+        components::{
+            CameraComponent,
+            RenderMaterialComponent,
+            RenderMeshComponent,
+        },
+        resources::CameraUniformBufferGroupLayoutResource,
+    },
+    transform::GlobalTransform,
+};
 
 fn main() {
     let mut app = App::new();

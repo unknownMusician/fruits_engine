@@ -2,20 +2,20 @@ use std::{ops::{Deref, DerefMut}, sync::{Arc, Mutex, RwLock, RwLockWriteGuard}};
 
 use fruits_utils::typed_map::{strategies::SendStrategy, TypedMap};
 
-pub trait SystemState : 'static + Send + Sync + Default { }
+pub trait SystemResource : 'static + Send + Sync + Default { }
 
-pub struct SystemStatesHolder {
+pub struct SystemResourcesHolder {
     data: Mutex<TypedMap<SendStrategy>>,
 }
 
-impl SystemStatesHolder {
+impl SystemResourcesHolder {
     pub fn new() -> Self {
         Self {
             data: Mutex::new(TypedMap::new()),
         }
     }
 
-    pub fn get_or_create<S: SystemState>(&self) -> Option<SystemStatesHolderGuard<S>> {
+    pub fn get_or_create<S: SystemResource>(&self) -> Option<SystemResourcesHolderGuard<S>> {
         let data = &mut self.data.lock().unwrap();
         
         if !data.contains::<Arc<RwLock<S>>>() {
@@ -24,16 +24,16 @@ impl SystemStatesHolder {
 
         let state = data.get_ref::<Arc<RwLock<S>>>().unwrap();
 
-        SystemStatesHolderGuard::new(Arc::clone(state))
+        SystemResourcesHolderGuard::new(Arc::clone(state))
     }
 }
 
-pub struct SystemStatesHolderGuard<'a, S: SystemState> {
+pub struct SystemResourcesHolderGuard<'a, S: SystemResource> {
     _guard: Arc<RwLock<S>>,
     _lock: RwLockWriteGuard<'a, S>,
 }
 
-impl<'a, S: SystemState> SystemStatesHolderGuard<'a, S> {
+impl<'a, S: SystemResource> SystemResourcesHolderGuard<'a, S> {
     fn new(guard: Arc<RwLock<S>>) -> Option<Self> {
         let ptr = &*guard as *const RwLock<S>;
         // safe because lock will live as long as the guard and guard will leave as long as the SystemStatesHolderGuard lives.
@@ -46,7 +46,7 @@ impl<'a, S: SystemState> SystemStatesHolderGuard<'a, S> {
     }
 }
 
-impl<'a, S: SystemState> Deref for SystemStatesHolderGuard<'a, S> {
+impl<'a, S: SystemResource> Deref for SystemResourcesHolderGuard<'a, S> {
     type Target = S;
 
     fn deref(&self) -> &Self::Target {
@@ -54,36 +54,8 @@ impl<'a, S: SystemState> Deref for SystemStatesHolderGuard<'a, S> {
     }
 }
 
-impl<'a, S: SystemState> DerefMut for SystemStatesHolderGuard<'a, S> {
+impl<'a, S: SystemResource> DerefMut for SystemResourcesHolderGuard<'a, S> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self._lock
     }
 }
-
-// todo: remove (here just in case something goes wrong)
-// impl SystemStatesHolder {
-//     pub fn new() -> Self {
-//         Self {
-//             data: Mutex::new(TypedMap::new()),
-//         }
-//     }
-
-//     pub fn get_or_create<S: SystemState>(&self) -> MutexGuard<S> {
-//         let ptr = {
-//             let data = &mut *self.data.lock().unwrap();
-            
-//             if data.get_ref::<Box<Mutex<S>>>().is_none() {
-//                 data.insert(Box::new(Mutex::new(S::default())));
-//             }
-
-//             let s = data.get_ref::<Box<Mutex<S>>>().unwrap();
-
-//             Box::as_ref(s) as *const Mutex<S>
-//         };
-
-//         let mutex = unsafe { &*ptr };
-
-//         mutex.lock().unwrap()
-//     }
-// }
-
