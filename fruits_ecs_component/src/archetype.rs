@@ -172,7 +172,7 @@ impl Archetype {
         self.layout.components_set()
     }
 
-    pub fn iter<'a, A: ArchetypeIteratorItem>(&'a self) -> ArchetypeIterator<'a, A> {
+    pub fn iter<A: ArchetypeIteratorItem>(&self) -> ArchetypeIterator<A> {
         // todo: threading guards
         ArchetypeIterator::new(
             &self.archetype,
