@@ -49,10 +49,15 @@ unsafe impl<'w, A: ArchetypeIteratorItem> SystemParam for WorldQuery<'w, A> {
 }
 
 impl<'w, A: ArchetypeIteratorItem> WorldQuery<'w, A> {
-    pub fn iter<'r>(&'r self) -> impl Iterator<Item = <A::Item<'static> as ArchetypeIteratorItem>::Item<'w>> + 'r
+    pub fn iter<'r>(&'r self) -> impl Iterator<Item = <A::ReadOnlyItem<'static> as ArchetypeIteratorItem>::Item<'w>> + 'r
         where 'w: 'r
     {
         self.query.iter()
+    }
+    pub fn iter_mut<'r>(&'r mut self) -> impl Iterator<Item = <A::Item<'static> as ArchetypeIteratorItem>::Item<'w>> + 'r
+        where 'w: 'r
+    {
+        self.query.iter_mut()
     }
 
     pub fn len(&self) -> usize {

@@ -160,11 +160,11 @@ fn init(mut world: ExclusiveWorldAccess) {
 fn accumulate_boid_separation(
     boid_settings: Res<BoidSettings>,
     targets_queue: WorldQuery<(Entity, &GlobalTransform, &BoidTarget)>,
-    boids_queue: WorldQuery<(Entity, &GlobalTransform, &mut Boid)>,
+    mut boids_queue: WorldQuery<(Entity, &GlobalTransform, &mut Boid)>,
 ) {
     let timer = Instant::now();
 
-    for (boid_entity, boid_transform, boid) in boids_queue.iter() {
+    for (boid_entity, boid_transform, boid) in boids_queue.iter_mut() {
         let mut sum = Vec3::with_all(0.0_f32);
 
         for (target_entity, target_transform, _) in targets_queue.iter() {
@@ -188,51 +188,51 @@ fn accumulate_boid_separation(
 }
 
 fn affect_motor_by_boid(
-    query: WorldQuery<(&Boid, &mut Motor)>
+    mut query: WorldQuery<(&Boid, &mut Motor)>
 ) {
-    for (boid, motor) in query.iter() {
+    for (boid, motor) in query.iter_mut() {
         motor.acceleration_direction = (motor.acceleration_direction.normalized_or_0() + boid.target_direction).normalized_or_0();
     }
 }
 
 fn apply_motor(
-    query: WorldQuery<(&Motor, &mut Velocity)>,
+    mut query: WorldQuery<(&Motor, &mut Velocity)>,
 ) {
-    for (motor, velocity) in query.iter() {
+    for (motor, velocity) in query.iter_mut() {
         velocity.0 += motor.acceleration_direction.normalized_or_0() * motor.strength;
     }
 }
 
 fn apply_damping(
-    query: WorldQuery<&mut Velocity>,
+    mut query: WorldQuery<&mut Velocity>,
     boid_settings: Res<BoidSettings>,
 ) {
-    for velocity in query.iter() {
+    for velocity in query.iter_mut() {
         velocity.0 -= velocity.0 * boid_settings.damping_factor;
     }
 }
 
 fn apply_velocity(
-    query: WorldQuery<(&Velocity, &mut GlobalTransform)>
+    mut query: WorldQuery<(&Velocity, &mut GlobalTransform)>
 ) {
-    for (velocity, transform) in query.iter() {
+    for (velocity, transform) in query.iter_mut() {
         transform.position += velocity.0;
     }
 }
 
 fn rotate_boids_by_velocity(
-    query: WorldQuery<(&mut GlobalTransform, &Velocity, &Boid)>,
+    mut query: WorldQuery<(&mut GlobalTransform, &Velocity, &Boid)>,
 ) {
-    for (transform, velocity, _) in query.iter() {
+    for (transform, velocity, _) in query.iter_mut() {
         let angle = f32::atan2(velocity.0.x, velocity.0.y);
         transform.scale_rotation = fruits_math::Matrix3x3::rotation_z(angle)
     }
 }
 
 fn restrict_boids(
-    query: WorldQuery<(&mut GlobalTransform, &Boid)>,
+    mut query: WorldQuery<(&mut GlobalTransform, &Boid)>,
 ) {
-    for (transform, _) in query.iter() {
+    for (transform, _) in query.iter_mut() {
         transform.position = Vec3::new(
             transform.position.x.clamp(-5.0, 5.0),
             transform.position.y.clamp(-5.0, 5.0),

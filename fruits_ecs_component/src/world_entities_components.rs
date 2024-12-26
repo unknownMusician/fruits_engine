@@ -30,7 +30,16 @@ impl<'w, A: ArchetypeIteratorItem> WorldEntitiesComponentsQuery<'w, A> {
         }
     }
     
-    pub fn iter<'r>(&'r self) -> impl Iterator<Item = <A::Item<'static> as ArchetypeIteratorItem>::Item<'w>> + 'r
+    pub fn iter<'r>(&'r self) -> impl Iterator<Item = <A::ReadOnlyItem<'static> as ArchetypeIteratorItem>::Item<'w>> + 'r
+        where 'w: 'r
+    {
+        self.archetype_indices.iter()
+            .copied()
+            .map(|i| self.archetypes.by_id_ref(i).unwrap())
+            .flat_map(move |a| a.iter::<A::ReadOnlyItem<'static>>())
+    }
+    
+    pub fn iter_mut<'r>(&'r mut self) -> impl Iterator<Item = <A::Item<'static> as ArchetypeIteratorItem>::Item<'w>> + 'r
         where 'w: 'r
     {
         self.archetype_indices.iter()

@@ -6,6 +6,7 @@ use super::{archetype_layout::ArchetypeLayout, component::Component, entity::Ent
 
 pub unsafe trait ArchetypeIteratorItem {
     type Item<'w>: 'w + ArchetypeIteratorItem;
+    type ReadOnlyItem<'w>: 'w + ArchetypeIteratorItem;
     
     fn from_archetype<'w>(entity_index: usize, archetype: &'w UnsafeArchetype, layout: &ArchetypeLayout) -> Self::Item<'w>;
     fn fill_usage(usage: &mut PerTypeDataUsage);
@@ -13,6 +14,7 @@ pub unsafe trait ArchetypeIteratorItem {
 
 unsafe impl<'a, C: Component> ArchetypeIteratorItem for &'a C {
     type Item<'w> = &'w C;
+    type ReadOnlyItem<'w> = &'w C;
     
     fn from_archetype<'w>(entity_index: usize, archetype: &'w UnsafeArchetype, layout: &ArchetypeLayout) -> Self::Item<'w> {
         let item_location = layout.component_memory_physical_location(entity_index, &TypeId::of::<C>());
@@ -31,6 +33,7 @@ unsafe impl<'a, C: Component> ArchetypeIteratorItem for &'a C {
 
 unsafe impl<C: Component> ArchetypeIteratorItem for &mut C {
     type Item<'w> = &'w mut C;
+    type ReadOnlyItem<'w> = &'w C;
     
     fn from_archetype<'w>(entity_index: usize, archetype: &'w UnsafeArchetype, layout: &ArchetypeLayout) -> Self::Item<'w> {
         let item_location = layout.component_memory_physical_location(entity_index, &TypeId::of::<C>());
@@ -49,6 +52,7 @@ unsafe impl<C: Component> ArchetypeIteratorItem for &mut C {
 
 unsafe impl ArchetypeIteratorItem for Entity {
     type Item<'w> = Entity;
+    type ReadOnlyItem<'w> = Entity;
     
     fn from_archetype<'w>(entity_index: usize, archetype: &'w UnsafeArchetype, layout: &ArchetypeLayout) -> Self::Item<'w> {
         let item_location = layout.entity_memory_physical_location(entity_index);
@@ -63,6 +67,7 @@ unsafe impl ArchetypeIteratorItem for Entity {
     fn fill_usage(usage: &mut PerTypeDataUsage) {
         usage.add(DataUsageEntry::new_readonly(TypeId::of::<Entity>()));
     }
+    
 }
 
 macro_rules! archetype_iterator_item_impl {
@@ -74,6 +79,9 @@ macro_rules! archetype_iterator_item_impl {
         {
             type Item<'w> = (
                 $($P::Item<'w>),+
+            );
+            type ReadOnlyItem<'w> = (
+                $($P::ReadOnlyItem<'w>),+
             );
             
             fn from_archetype<'w>(entity_index: usize, archetype: &'w UnsafeArchetype, layout: &ArchetypeLayout) -> Self::Item<'w> {

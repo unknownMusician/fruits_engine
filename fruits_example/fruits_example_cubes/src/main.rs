@@ -172,9 +172,9 @@ fn move_camera(
 
 fn move_cube(
     time: Res<TimeResource>,
-    query: WorldQuery<(Entity, &mut GlobalTransform, &MovingCubeComponent)>,
+    mut query: WorldQuery<(Entity, &mut GlobalTransform, &MovingCubeComponent)>,
 ) {
-    for (entity, transform, _) in query.iter() {
+    for (entity, transform, _) in query.iter_mut() {
         let i = entity.version_index().index;
 
         if i == 1 {
