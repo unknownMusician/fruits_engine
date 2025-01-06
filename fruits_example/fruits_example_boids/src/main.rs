@@ -4,20 +4,7 @@ use fruits_prelude::*;
 use fruits_math::{Matrix, Matrix3x3, Vec3};
 use fruits_modules::{
     asset::AssetStorageResource,
-    render::{
-        assets::{
-            Material,
-            Mesh,
-            Shader,
-            StandardVertex,
-        },
-        components::{
-            CameraComponent,
-            RenderMaterialComponent,
-            RenderMeshComponent,
-        },
-        resources::CameraUniformBufferGroupLayoutResource,
-    },
+    render::*,
     transform::GlobalTransform,
 };
 

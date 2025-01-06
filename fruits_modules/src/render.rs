@@ -1,12 +1,17 @@
-pub mod assets;
-pub mod components;
-pub mod resources;
-pub mod systems;
+mod assets;
+mod components;
+mod resources;
+mod systems;
+
+pub use self::{
+    assets::*,
+    components::*,
+    resources::*,
+    systems::*,
+};
 
 use fruits_ecs_world::WorldBuilder;
 use fruits_ecs_schedule::Schedule;
-use resources::SurfaceTextureResource;
-use systems::*;
 
 pub fn add_module_to(world: &mut WorldBuilder) {
     world.data_mut().resources_mut().insert(SurfaceTextureResource { texture: None, });

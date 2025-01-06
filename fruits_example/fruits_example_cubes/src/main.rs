@@ -1,8 +1,8 @@
 use std::time::Instant;
 
 use fruits_prelude::*;
-use fruits_math::{Matrix, Matrix3x3, Vec3};
-use fruits_modules::{asset::AssetStorageResource, render::{self as render_module, assets::*, components::*, resources::*, systems::create_camera_uniform_bind_group_layout}, transform::GlobalTransform};
+use fruits_math::{Matrix, Matrix3x3, Quat, Vec3};
+use fruits_modules::{asset::*, render::*, transform::*};
 
 fn main() {
     run_ecs_behavior_integration_test();
@@ -12,16 +12,16 @@ fn run_ecs_behavior_integration_test() {
     let mut app = App::new();
     let world = app.ecs_mut();
 
-    render_module::add_module_to(world);
+    fruits_modules::render::add_module_to(world);
+    fruits_modules::transform::add_module_to(world);
 
     world.behavior_mut().get_mut(Schedule::Start).add_system(init_resources);
     world.behavior_mut().get_mut(Schedule::Start).add_system(init_mesh_material);
     world.behavior_mut().get_mut(Schedule::Update).add_system(update_time);
-    world.behavior_mut().get_mut(Schedule::Update).add_system(move_camera);
-    world.behavior_mut().get_mut(Schedule::Update).add_system(move_cube);
+    world.behavior_mut().get_mut(Schedule::Update).add_system(move_cube_new);
     world.behavior_mut().get_mut(Schedule::Update).add_system(log_fps);
+    //world.behavior_mut().get_mut(Schedule::Update).add_system(log_entities);
 
-    world.behavior_mut().get_mut(Schedule::Update).order_systems(move_cube, move_camera);
     world.behavior_mut().get_mut(Schedule::Start).order_systems(init_resources, init_mesh_material);
     world.behavior_mut().get_mut(Schedule::Start).order_systems(create_camera_uniform_bind_group_layout, init_mesh_material);
 
@@ -137,7 +137,8 @@ fn init_mesh_material(mut world: ExclusiveWorldAccess) {
         println!("created entity: i={}, v={}", entity.version_index().index, entity.version_index().version);
         world.entities_components_mut().add_component(entity, RenderMeshComponent { mesh: mesh.clone() });
         world.entities_components_mut().add_component(entity, RenderMaterialComponent { material: material.clone() });
-        world.entities_components_mut().add_component(entity, GlobalTransform { scale_rotation: Matrix3x3::IDENTITY, position: Vec3::with_all(0.0) });
+        world.entities_components_mut().add_component(entity, GlobalTransform::IDENTITY);
+        world.entities_components_mut().add_component(entity, LocalTransform::IDENTITY);
         world.entities_components_mut().add_component(entity, MovingCubeComponent);
     }
 }
@@ -157,20 +158,7 @@ fn update_time(
     time.time = start.elapsed().as_secs_f32();
 }
 
-fn move_camera(
-    time: Res<TimeResource>,
-    query: WorldQuery<(&mut GlobalTransform, &CameraComponent)>,
-) {
-    for (transform, _) in query.iter() {
-        //transform.position.x = time.time.sin() * 0.5_f32;
-        //transform.position.y = time.time.cos() * 0.5_f32;
-        //transform.position.z = -3.0_f32 + time.time.cos() * 10.0_f32;
-
-        //transform.scale_rotation = Matrix3x3::rotation_y(time.time);
-    }
-}
-
-fn move_cube(
+fn move_cube_old(
     time: Res<TimeResource>,
     mut query: WorldQuery<(Entity, &mut GlobalTransform, &MovingCubeComponent)>,
 ) {
@@ -191,6 +179,27 @@ fn move_cube(
     }
 }
 
+fn move_cube_new(
+    time: Res<TimeResource>,
+    mut query: WorldQuery<(Entity, &mut LocalTransform, &MovingCubeComponent)>,
+) {
+    for (entity, transform, _) in query.iter_mut() {
+        let i = entity.version_index().index;
+
+        if i == 1 {
+            transform.position.x = time.time.cos() * 0.5_f32;
+        } else if i == 2 {
+            transform.position.y = time.time.cos() * 0.5_f32;
+        } else if i == 3 {
+            transform.position.z = time.time.cos() * 0.5_f32;
+        }
+
+        let rot_matrix = Matrix3x3::rotation_y(time.time * 1.0_f32 * i as f32) * Matrix3x3::rotation_z(-45.0_f32.to_radians());
+
+        transform.rotation = Quat::from_matrix(rot_matrix);
+    }
+}
+
 fn log_fps(
     mut fps: ResMut<FpsResource>,
     time: Res<TimeResource>,
@@ -203,4 +212,14 @@ fn log_fps(
 
         fps.count = 0;
     }
+}
+
+fn log_entities(
+    q: WorldQuery<Entity>,
+) {
+    for e in q.iter() {
+        println!("{e:?}");
+    }
+
+    println!();
 }

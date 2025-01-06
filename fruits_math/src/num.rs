@@ -8,6 +8,7 @@ pub trait Number
     + Sealed
     + Copy
     + PartialEq
+    + PartialOrd
     + Add<Output = Self>
     + AddAssign
     + Sub<Output = Self>
@@ -22,11 +23,6 @@ pub trait Number
 
     fn into_f64(self) -> f64;
     fn from_f64(v: f64) -> Self;
-}
-
-pub trait FloatNumber : Number {
-    fn sin(self) -> Self;
-    fn cos(self) -> Self;
 }
 
 macro_rules! impl_number_trait {

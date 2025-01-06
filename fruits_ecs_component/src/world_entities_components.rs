@@ -16,15 +16,22 @@ pub struct WorldEntitiesComponents {
 pub struct WorldEntitiesComponentsQuery<'w, A: ArchetypeIteratorItem> {
     archetype_indices: Box<[usize]>,
     archetypes: &'w WorldArchetypes,
+    entities: &'w WorldEntities,
     _guards: Box<[DataRwLockGuard<'w>]>,
     _phantom: PhantomData<fn(A::Item<'static>) -> A::Item<'static>>,
 }
 
 impl<'w, A: ArchetypeIteratorItem> WorldEntitiesComponentsQuery<'w, A> {
-    fn new_unchecked(archetype_indices: Box<[usize]>, guards: Box<[DataRwLockGuard<'w>]>, archetypes: &'w WorldArchetypes) -> Self {
+    fn new_unchecked(
+        archetype_indices: Box<[usize]>,
+        guards: Box<[DataRwLockGuard<'w>]>,
+        archetypes: &'w WorldArchetypes,
+        entities: &'w WorldEntities,
+    ) -> Self {
         Self {
             archetype_indices,
             archetypes,
+            entities,
             _guards: guards,
             _phantom: Default::default(),
         }
@@ -56,6 +63,46 @@ impl<'w, A: ArchetypeIteratorItem> WorldEntitiesComponentsQuery<'w, A> {
 
     pub fn is_empty(&self) -> bool {
         !self.archetypes_iter().any(|a| a.entities_count() > 0)
+    }
+
+    pub fn get<'a>(&'a self, entity: Entity) -> Option<<A::ReadOnlyItem<'static> as ArchetypeIteratorItem>::Item<'w>> {
+        if TypeId::of::<<A::ReadOnlyItem<'static> as ArchetypeIteratorItem>::Item<'static>>() == TypeId::of::<Entity>() {
+            let item = unsafe {
+                std::mem::transmute_copy::<_, <A::ReadOnlyItem<'static> as ArchetypeIteratorItem>::Item<'w>>(&entity)
+            };
+
+            return Some(item);
+        }
+
+        let location = self.entities.get(entity)?;
+
+        let archetype = self.archetypes.by_id_ref(location.archetype_id)?;
+
+        Some(<A::ReadOnlyItem<'static> as ArchetypeIteratorItem>::from_archetype(
+            location.entity_archetype_index,
+            unsafe { archetype.unsafe_archetype() },
+            archetype.layout(),
+        ))
+    }
+
+    pub fn get_mut<'a>(&'a mut self, entity: Entity) -> Option<<A::Item<'static> as ArchetypeIteratorItem>::Item<'w>> {
+        if TypeId::of::<<A::Item<'static> as ArchetypeIteratorItem>::Item<'static>>() == TypeId::of::<Entity>() {
+            let item = unsafe {
+                std::mem::transmute_copy::<_, <A::Item<'static> as ArchetypeIteratorItem>::Item<'w>>(&entity)
+            };
+
+            return Some(item);
+        }
+
+        let location = self.entities.get(entity)?;
+
+        let archetype = self.archetypes.by_id_ref(location.archetype_id)?;
+
+        Some(<A::Item<'static> as ArchetypeIteratorItem>::from_archetype(
+            location.entity_archetype_index,
+            unsafe { archetype.unsafe_archetype() },
+            archetype.layout(),
+        ))
     }
 
     fn archetypes_iter<'r>(&'r self) -> impl Iterator<Item = &'w Archetype> + 'r
@@ -91,6 +138,7 @@ impl WorldEntitiesComponents {
                 (0..self.archetypes.all().len()).collect::<Box<_>>(),
                 guards,
                 &self.archetypes,
+                &self.entity_datas,
             );
         }
 
@@ -105,6 +153,7 @@ impl WorldEntitiesComponents {
                 Box::new([]),
                 Box::new([]),
                 &self.archetypes,
+                &self.entity_datas,
             );
         };
 
@@ -128,6 +177,7 @@ impl WorldEntitiesComponents {
             suitable_archetypes.into_boxed_slice(),
             guards,
             &self.archetypes,
+            &self.entity_datas,
         )
     }
 
@@ -239,5 +289,25 @@ impl WorldEntitiesComponents {
         *self.entity_datas.get_mut(entity).unwrap() = entity_with_removed_component_new_location;
 
         return Some(component);
+    }
+
+    pub fn get_component<C: Component>(&self, entity: Entity) -> Option<&C> {
+        let entity_location = self.entity_datas.get(entity)?;
+
+        let archetype = self.archetypes.by_id_ref(entity_location.archetype_id).unwrap();
+
+        archetype.get_component_ref::<C>(entity_location.entity_archetype_index)
+    }
+
+    pub fn get_component_mut<C: Component>(&mut self, entity: Entity) -> Option<&mut C> {
+        let entity_location = self.entity_datas.get(entity)?;
+
+        let archetype = self.archetypes.by_id_ref(entity_location.archetype_id).unwrap();
+
+        archetype.get_component_mut::<C>(entity_location.entity_archetype_index)
+    }
+
+    pub fn contains_entity(&self, entity: Entity) -> bool {
+        self.entity_datas.contains(entity)
     }
 }

@@ -4,7 +4,7 @@ use crate::{Matrix, Matrix3x3};
 
 use super::{num::Number, Vec3, Vec4};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Matrix4x4<T: Number> {
     data: [[T; 4]; 4],
 }

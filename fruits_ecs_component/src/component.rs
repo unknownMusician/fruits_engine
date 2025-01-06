@@ -39,12 +39,18 @@ impl WorldArchetypes {
             return None;
         }
 
-        if id.0 > id.1 {
+        let should_swap = id.0 > id.1;
+
+        if should_swap {
             id = (id.1, id.0);
         }
 
-        let slices = self.archetypes.as_slice()[id.0..].split_at(id.1 - id.0);
+        let mut slices = self.archetypes.as_slice()[id.0..].split_at(id.1 - id.0);
 
+        if should_swap {
+            (slices.0, slices.1) = (slices.1, slices.0);
+        }
+        
         Some((&slices.0[0], &slices.1[0]))
     }
     pub fn by_2_ids_mut(&mut self, mut id: (usize, usize)) -> Option<(&mut Archetype, &mut Archetype)> {
@@ -52,11 +58,17 @@ impl WorldArchetypes {
             return None;
         }
 
-        if id.0 > id.1 {
+        let should_swap = id.0 > id.1;
+
+        if should_swap {
             id = (id.1, id.0);
         }
 
-        let slices = self.archetypes.as_mut_slice()[id.0..].split_at_mut(id.1 - id.0);
+        let mut slices = self.archetypes.as_mut_slice()[id.0..].split_at_mut(id.1 - id.0);
+
+        if should_swap {
+            (slices.0, slices.1) = (slices.1, slices.0);
+        }
 
         Some((&mut slices.0[0], &mut slices.1[0]))
     }

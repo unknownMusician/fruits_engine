@@ -396,4 +396,12 @@ impl Archetype {
 
         Some((src.erase_entity(src_entity_index).unwrap(), component))
     }
+
+    pub fn layout(&self) -> &Arc<ArchetypeLayout> {
+        &self.layout
+    }
+
+    pub unsafe fn unsafe_archetype(&self) -> &UnsafeArchetype {
+        &self.archetype
+    }
 }

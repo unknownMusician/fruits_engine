@@ -4,7 +4,7 @@ use crate::Matrix;
 
 use super::{num::Number, Vec2};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Matrix2x2<T: Number> {
     data: [[T; 2]; 2],
 }

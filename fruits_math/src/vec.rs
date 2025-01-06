@@ -29,7 +29,8 @@ macro_rules! and_all {
 
 macro_rules! vec_impl {
     ($V: ident, $($I: ident),+) => {
-        #[derive(Copy, Clone)]
+        #[derive(Copy, Clone, Debug)]
+        #[repr(C)]
         pub struct $V<T: Number> {
             $(pub $I: T),+
         }
@@ -41,6 +42,22 @@ macro_rules! vec_impl {
 
             pub const fn with_all(v: T) -> Self {
                 Self { $($I: v),+ }
+            }
+
+            pub const fn as_array(&self) -> &[T; members_count!($($I),+)] {
+                unsafe { std::mem::transmute(self) }
+            }
+
+            pub fn as_array_mut(&mut self) -> &mut [T; members_count!($($I),+)] {
+                unsafe { std::mem::transmute(self) }
+            }
+
+            pub const fn from_array_ref(a: &[T; members_count!($($I),+)]) -> &Self {
+                unsafe { std::mem::transmute(a) }
+            }
+
+            pub fn from_array_mut(a: &mut [T; members_count!($($I),+)]) -> &mut Self {
+                unsafe { std::mem::transmute(a) }
             }
 
             pub const fn into_array(self) -> [T; members_count!($($I),+)] {
@@ -201,18 +218,9 @@ vec_impl!{Vec2, x, y}
 vec_impl!{Vec3, x, y, z}
 vec_impl!{Vec4, x, y, z, w}
 
-trait CrossProduct<Rhs = Self> {
-    type Output;
-
-    fn cross(self, rhs: Rhs) -> Self::Output;
-}
-
-impl<T: Number> CrossProduct for Vec3<T>
-{
-    type Output = Self;
-
-    fn cross(self, rhs: Self) -> Self::Output {
-        Self::Output {
+impl<T: Number> Vec3<T> {
+    fn cross(self, rhs: Self) -> Self {
+        Self {
             x: self.y * rhs.z - self.z * rhs.y,
             y: self.z * rhs.x - self.x * rhs.z,
             z: self.x * rhs.y - self.y * rhs.x,
@@ -222,5 +230,5 @@ impl<T: Number> CrossProduct for Vec3<T>
 
 // todo: swizzling
 // todo: maybe unconstraint from Number trait
-// todo: VertexIndex for optimized consecutive lookup.
+// todo: VectorIndex for optimized consecutive lookup.
 // todo: const fn and inline where possible/needed.

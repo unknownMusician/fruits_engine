@@ -1,6 +1,6 @@
 use std::any::TypeId;
 
-use fruits_ecs_component::{ArchetypeIteratorItem, Component, WorldEntitiesComponentsQuery};
+use fruits_ecs_component::{ArchetypeIteratorItem, Component, Entity, WorldEntitiesComponentsQuery};
 use fruits_ecs_data::WorldData;
 use fruits_ecs_data_usage::*;
 
@@ -45,7 +45,6 @@ unsafe impl<'w, A: ArchetypeIteratorItem> SystemParam for WorldQuery<'w, A> {
             query: mapped_entities_components.map_into(|e| e.query::<A::Item<'d>>()),
         })
     }
-
 }
 
 impl<'w, A: ArchetypeIteratorItem> WorldQuery<'w, A> {
@@ -66,5 +65,13 @@ impl<'w, A: ArchetypeIteratorItem> WorldQuery<'w, A> {
 
     pub fn is_empty(&self) -> bool {
         self.query.is_empty()
+    }
+
+    pub fn get(&self, entity: Entity) -> Option<<A::ReadOnlyItem<'static> as ArchetypeIteratorItem>::Item<'w>> {
+        self.query.get(entity)
+    }
+
+    pub fn get_mut(&mut self, entity: Entity) -> Option<<A::Item<'static> as ArchetypeIteratorItem>::Item<'w>> {
+        self.query.get_mut(entity)
     }
 }

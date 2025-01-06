@@ -4,6 +4,7 @@ mod matrix3x3;
 mod matrix4x4;
 mod num;
 mod vec;
+mod quaternion;
 
 pub use matrix::*;
 pub use matrix2x2::*;
@@ -11,8 +12,7 @@ pub use matrix3x3::*;
 pub use matrix4x4::*;
 pub use num::*;
 pub use vec::*;
-
-use self::num::Number;
+pub use quaternion::*;
 
 pub const fn scale_matrix_2d<T: Number>(scale: Vec2<T>) -> Matrix2x2<T> {
     Matrix2x2::<T>::from_array([

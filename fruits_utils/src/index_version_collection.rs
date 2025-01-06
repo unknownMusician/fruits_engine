@@ -46,7 +46,8 @@ impl<T> VersionCollection<T> {
         }
 
         let index: usize = self.items.len();
-        let version = 0;
+        // entities with version 0 cannot exist.
+        let version = 1;
 
         self.items.push(DataWithVersion::<T> {
             data: MaybeUninit::new(data),

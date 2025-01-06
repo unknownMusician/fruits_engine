@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use fruits_utils::index_version_collection::{
     VersionCollection,
     VersionIndex,
@@ -7,8 +9,22 @@ use fruits_utils::index_version_collection::{
 pub struct Entity(VersionIndex);
 
 impl Entity {
+    pub const EMPTY: Entity = Entity(VersionIndex { index: 0, version: 0 });
+
     pub fn version_index(&self) -> VersionIndex {
         self.0
+    }
+}
+
+impl Default for Entity {
+    fn default() -> Self {
+        Self::EMPTY
+    }
+}
+
+impl Debug for Entity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Entity").field("i", &self.0.index).field("v", &self.0.version).finish()
     }
 }
 
