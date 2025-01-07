@@ -19,6 +19,7 @@ fn run_ecs_behavior_integration_test() {
     world.behavior_mut().get_mut(Schedule::Start).add_system(init_mesh_material);
     world.behavior_mut().get_mut(Schedule::Update).add_system(update_time);
     world.behavior_mut().get_mut(Schedule::Update).add_system(move_cube_new);
+    world.behavior_mut().get_mut(Schedule::Update).add_system(rotate_cube);
     world.behavior_mut().get_mut(Schedule::Update).add_system(log_fps);
     //world.behavior_mut().get_mut(Schedule::Update).add_system(log_entities);
 
@@ -49,6 +50,9 @@ struct SampleResource {}
 
 #[derive(Component)]
 struct MovingCubeComponent;
+
+#[derive(Component)]
+struct RotatingCubeComponent;
 
 #[derive(Resource)]
 struct TimeResource {
@@ -133,12 +137,20 @@ fn init_mesh_material(mut world: ExclusiveWorldAccess) {
     let mesh = world.resources_mut().get_mut::<AssetStorageResource::<Mesh>>().unwrap().insert(mesh);
     
     for _ in 0..3 {
+        let mut parent_transform = LocalTransform::IDENTITY;
+
+        parent_transform.scale.x *= 0.1;
+
+        let parent = world.entities_components_mut().create_entity();
+        world.entities_components_mut().add_component(parent, parent_transform);
+
         let entity = world.entities_components_mut().create_entity();
-        println!("created entity: i={}, v={}", entity.version_index().index, entity.version_index().version);
+
         world.entities_components_mut().add_component(entity, RenderMeshComponent { mesh: mesh.clone() });
         world.entities_components_mut().add_component(entity, RenderMaterialComponent { material: material.clone() });
-        world.entities_components_mut().add_component(entity, GlobalTransform::IDENTITY);
         world.entities_components_mut().add_component(entity, LocalTransform::IDENTITY);
+        world.entities_components_mut().add_component(entity, ChildComponent { parent });
+        world.entities_components_mut().add_component(entity, RotatingCubeComponent);
         world.entities_components_mut().add_component(entity, MovingCubeComponent);
     }
 }
@@ -158,33 +170,14 @@ fn update_time(
     time.time = start.elapsed().as_secs_f32();
 }
 
-fn move_cube_old(
-    time: Res<TimeResource>,
-    mut query: WorldQuery<(Entity, &mut GlobalTransform, &MovingCubeComponent)>,
-) {
-    for (entity, transform, _) in query.iter_mut() {
-        let i = entity.version_index().index;
-
-        if i == 1 {
-            transform.position.x = time.time.cos() * 0.5_f32;
-        } else if i == 2 {
-            transform.position.y = time.time.cos() * 0.5_f32;
-        } else if i == 3 {
-            transform.position.z = time.time.cos() * 0.5_f32;
-        }
-        transform.scale_rotation = Matrix3x3::rotation_y(time.time * 1.0_f32 * i as f32) * Matrix3x3::rotation_z(-45.0_f32.to_radians());
-
-        //transform.position.x = time.time.sin() * 0.5_f32;
-        //transform.position.y = time.time.cos() * 0.5_f32;
-    }
-}
-
 fn move_cube_new(
     time: Res<TimeResource>,
     mut query: WorldQuery<(Entity, &mut LocalTransform, &MovingCubeComponent)>,
 ) {
+    let mut i = 0;
+
     for (entity, transform, _) in query.iter_mut() {
-        let i = entity.version_index().index;
+        i += 1;
 
         if i == 1 {
             transform.position.x = time.time.cos() * 0.5_f32;
@@ -193,10 +186,19 @@ fn move_cube_new(
         } else if i == 3 {
             transform.position.z = time.time.cos() * 0.5_f32;
         }
+    }
+}
 
-        let rot_matrix = Matrix3x3::rotation_y(time.time * 1.0_f32 * i as f32) * Matrix3x3::rotation_z(-45.0_f32.to_radians());
+fn rotate_cube(
+    time: Res<TimeResource>,
+    mut query: WorldQuery<(Entity, &mut LocalTransform, &RotatingCubeComponent)>,
+) {
+    let mut i = 0;
 
-        transform.rotation = Quat::from_matrix(rot_matrix);
+    for (entity, transform, _) in query.iter_mut() {
+        i += 1;
+
+        transform.rotation = Quat::rotation_y(time.time as f64 * 1.0_f64 * i as f64) * Quat::rotation_z(-45.0_f64.to_radians());
     }
 }
 

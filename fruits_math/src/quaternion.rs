@@ -1,4 +1,6 @@
-use crate::{Matrix3x3, Number, Vec4};
+use std::ops::Mul;
+
+use crate::{Matrix3x3, Number, Vec3, Vec4};
 
 #[derive(Copy, Clone, Debug)]
 #[repr(C)]
@@ -89,6 +91,58 @@ impl<N: Number> Quat<N> {
         }
     }
 
+    pub fn rotation_x(rad: f64) -> Self {
+        let half_angle = rad / 2.0;
+
+        Self {
+            x: N::from_f64(half_angle.sin()),
+            y: N::ZERO,
+            z: N::ZERO,
+            w: N::from_f64(half_angle.cos()),
+        }
+    }
+
+    pub fn rotation_y(rad: f64) -> Self {
+        let half_angle = rad / 2.0;
+
+        Self {
+            x: N::ZERO,
+            y: N::from_f64(half_angle.sin()),
+            z: N::ZERO,
+            w: N::from_f64(half_angle.cos()),
+        }
+    }
+
+    pub fn rotation_z(rad: f64) -> Self {
+        let half_angle = rad / 2.0;
+
+        Self {
+            x: N::ZERO,
+            y: N::ZERO,
+            z: N::from_f64(half_angle.sin()),
+            w: N::from_f64(half_angle.cos()),
+        }
+    }
+
+    pub fn rotation_axis_angle(mut axis: Vec3<N>, rad: f64) -> Self {
+        if axis == Vec3::with_all(N::from_f64(0.0)) {
+            return Self::IDENTITY;
+        }
+
+        axis = axis.normalized();
+
+        let half_angle = rad / 2.0;
+
+        let half_angle_sin = N::from_f64(half_angle.sin());
+
+        Self {
+            x: axis.x * half_angle_sin,
+            y: axis.y * half_angle_sin,
+            z: axis.z * half_angle_sin,
+            w: N::from_f64(half_angle.cos()),
+        }
+    }
+
     pub const fn new(x: N, y: N, z: N, w: N) -> Self {
         Self { x, y, z, w }
     }
@@ -129,5 +183,19 @@ impl<N: Number> Quat<N> {
 
     pub fn normalized_or_0(&self) -> Self {
         Self::from_array(*Vec4::from_array_ref(self.as_array()).normalized_or_0().as_array())
+    }
+}
+
+impl<N: Number> Mul for Quat<N> {
+    type Output = Quat<N>;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        // todo: invalid
+        Self::Output {
+            w: rhs.w * self.w - rhs.x * self.x - rhs.y * self.y - rhs.z * self.z,
+            x: rhs.w * self.x + rhs.x * self.w - rhs.y * self.z + rhs.z * self.y,
+            y: rhs.w * self.y + rhs.x * self.z + rhs.y * self.w - rhs.z * self.x,
+            z: rhs.w * self.z - rhs.x * self.y + rhs.y * self.x + rhs.z * self.w,
+        }
     }
 }
