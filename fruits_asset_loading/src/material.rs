@@ -46,15 +46,15 @@ impl<'a> MaterialLoader<'a> {
         asset_metadata: StandardMaterialAssetMetadata,
         textures: &AssetStorageResource<StandardTexture>,
     ) -> Option<StandardMaterial> {
-
         // todo: read texture's native part to create material
         // todo: fallback to white texture on fail
-        let color_texture = textures.get(&asset_metadata.color_tex);
-
         let material = self.render_api.create_material(
             StandardMaterialAssets {
-                color_texture,
-                ..Default::default()
+                color_texture: textures.get(&asset_metadata.color_tex),
+                roughness_texture: textures.get(&asset_metadata.roughness_tex),
+                metallic_texture: textures.get(&asset_metadata.metallic_tex),
+                normal_texture: textures.get(&asset_metadata.normal_tex),
+                emission_texture: textures.get(&asset_metadata.emission_tex),
             },
             asset_metadata,
         );
